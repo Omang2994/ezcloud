@@ -272,8 +272,8 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <div class="hero-right" aria-label="EzSoft products">
       <div class="marks">
         <div class="mark"><i>Ez</i><b>EzTab <em>Pro</em></b><span>Piso tablet kiosk</span></div>
-        <div class="mark"><i>Ez</i><b>EzPrint</b><span>Printing, ID copy and photocopy vendo</span></div>
-        <div class="mark soon"><i>Ez</i><b>EzFi</b><span>PisoWiFi · coming soon</span></div>
+        <div class="mark"><i>Ez</i><b>EzPrint <em>Pro</em></b><span>Printing, ID copy and photocopy vendo</span></div>
+        <div class="mark soon"><i>Ez</i><b>EzFi <em>Pro</em></b><span>PisoWiFi · coming soon</span></div>
       </div>
     </div>
   </div>
@@ -290,7 +290,7 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <div class="brand"><i>Ez</i>EzSoft</div>
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
-      <button class="tab" role="tab" data-tab="units" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>EzPrint</span></button>
+      <button class="tab" role="tab" data-tab="units" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>EzPrint Pro</span></button>
       <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="9" cy="8" r="4"/><path d="M17 11a3 3 0 1 0 0-6M21 21v-1a5 5 0 0 0-3-4.6"/></svg><span>Clients</span></button>
       <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3"/></svg><span>Accounts</span></button>
       <button class="tab" role="tab" data-tab="unbind" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l-2 2a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M15 9l2-2a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0M3 3l18 18"/></svg><span>Unbind</span></button>
@@ -462,7 +462,7 @@ async function start(session) {
 // ───── Tabs ─────
 const TABS = ["home", "units", "clients", "accounts", "unbind", "downloads"];
 const HEADS = {
-  home: ["Home", "Your EzSoft products."], units: ["EzPrint", "Every EzPrint machine, live."],
+  home: ["Home", "Your EzSoft products."], units: ["EzPrint Pro", "Every EzPrint Pro machine, live."],
   clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Who can log in, and which shop they see."],
   unbind: ["Unbind requests", "Moving a license to a new coin slot."], downloads: ["Downloads", "Apps, installers and firmware."]
 };
@@ -482,9 +482,9 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
 // ───── Products ─────
 // Products that report to EzSoft. "ready: false" = shown, not openable yet.
 const PRODUCTS = [
-  { id: "ezprint", name: "EzPrint", tag: "Printing, ID copy and photocopy vendo", tab: "units", ready: true },
+  { id: "ezprint", name: "EzPrint", sub: "Pro", tag: "Printing, ID copy and photocopy vendo", tab: "units", ready: true },
   { id: "eztab", name: "EzTab", sub: "Pro", tag: "Piso tablet kiosk", ready: false, note: "Connects in a later EzTab update" },
-  { id: "ezfi", name: "EzFi", tag: "PisoWiFi", ready: false, note: "Coming soon" }
+  { id: "ezfi", name: "EzFi", sub: "Pro", tag: "PisoWiFi", ready: false, note: "Coming soon" }
 ];
 function renderHome() {
   $("#prodGrid").innerHTML = PRODUCTS.map(p => {
@@ -509,16 +509,16 @@ function renderHome() {
 // ───── Downloads ─────
 // Fill in "url" (and "version") when a file is ready; empty url = "Coming soon".
 const DOWNLOADS = [
-  { product: "EzPrint", items: [
-    { name: "EzPrint for Windows", kind: "Installer · Windows 10/11", version: "", url: "" },
+  { product: "EzPrint Pro", items: [
+    { name: "EzPrint Pro for Windows", kind: "Installer · Windows 10/11", version: "", url: "" },
     { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" },
     { name: "Setup guide", kind: "PDF", version: "", url: "" } ] },
   { product: "EzTab Pro", items: [
     { name: "EzTab Pro app", kind: "Android · .apk", version: "", url: "" },
     { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" },
     { name: "EzPC for Windows", kind: "Installer · Windows", version: "", url: "" } ] },
-  { product: "EzFi", items: [
-    { name: "EzFi portal", kind: "OpenWrt package", version: "", url: "" },
+  { product: "EzFi Pro", items: [
+    { name: "EzFi Pro portal", kind: "OpenWrt package", version: "", url: "" },
     { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" } ] }
 ];
 function renderDownloads(el) {
@@ -589,7 +589,7 @@ function renderUnits() {
 
   if (!all.length) {
     $("#units").innerHTML = `<div class="empty" style="grid-column:1/-1">${state.dev
-      ? "No EzPrint units yet. A unit appears here a minute after EzPrint starts with an activated license."
+      ? "No EzPrint Pro units yet. A unit appears here a minute after EzPrint Pro starts with an activated license."
       : "No units linked to your account yet. Ask the developer to link your account to your shop."}</div>`;
     return;
   }
