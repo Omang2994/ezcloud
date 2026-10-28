@@ -318,7 +318,18 @@ td.wrap-text { white-space: normal; min-width: 220px; }
         <span class="grow"></span>
         <span class="muted" id="updated" style="font-size:14px"></span>
         <button class="btn" id="refreshBtn">Refresh</button>
+        <button class="btn primary" id="addUnitBtn" type="button">Add unit</button>
       </div>
+      <form class="panel" id="addUnitForm" hidden>
+        <h3>Add a unit to your account</h3>
+        <p class="muted" style="margin:0">Type the license key of the machine (Admin › License on the machine shows the last 4 characters). The machine must be on and online once first.</p>
+        <div class="toolbar">
+          <input id="addKey" placeholder="EZP-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="max-width:340px;font-family:var(--f-mono)">
+          <button class="btn primary" type="submit">Add</button>
+          <button class="btn" type="button" id="addCancel">Cancel</button>
+        </div>
+        <div class="msg" id="addMsg"></div>
+      </form>
       <div class="grid" id="units"></div>
     </section>
 
@@ -653,7 +664,7 @@ async function openUnit(id) {
       <td>${p.ok ? `<span class="pill ok">Ready</span>` : `<span class="pill bad">${esc(p.detail)}</span>`}</td><td>${esc(p.warning || "")}</td></tr>`;
   }).join("");
   const iss = issues(u);
-  const pending = (unb.data || []).find(r => r.status === "pending");
+  const open = (unb.data || []).find(r => r.status === "pending" || r.status === "locked");
 
   sheet.innerHTML = `
     <div class="sheet-head"><div><h2>${esc(unitName(u))}</h2>
@@ -711,12 +722,17 @@ async function openUnit(id) {
       </div>
       <div class="muted">License key: <span class="mono">${esc(u.license_key || "—")}</span></div>
       <div><button class="btn primary" type="submit">Save</button> <span class="msg" id="unitMsg"></span></div>
-    </form>` : `
+    </form>` : ""}
+
     <div class="panel"><h3>License</h3>
-      ${pending ? `<div class="alert warn">Unbind requested ${esc(dt(pending.created_at))}. Waiting for the developer.</div>`
-        : `<label>Reason <input id="ubReason" placeholder="e.g. moving the license to a new coin slot"></label>
-           <div><button class="btn" id="ubBtn">Request unbind</button> <span class="msg" id="ubMsg"></span></div>`}
-    </div>`}
+      ${open && open.status === "pending" ? `<div class="alert warn">Unbind requested ${esc(dt(open.created_at))}. Waiting for the machine to lock itself (it checks every 5 minutes while online).</div>
+           <div><button class="btn" id="ubCancel" data-id="${open.id}">Cancel unbind</button> <span class="msg" id="ubMsg"></span></div>`
+      : open && open.status === "locked" ? `<div class="alert warn">The machine locked itself ${esc(dt(open.locked_at))}. ${state.dev ? "Clear deviceId of this key in Firebase, then mark it Done in Unbind." : "The developer will free the license key."}</div>`
+      : u.online ? `<p class="muted" style="margin:0">Unbinding locks this machine first, then frees the license key for another coin slot.</p>
+           <label>Reason <input id="ubReason" placeholder="e.g. moving the license to a new coin slot"></label>
+           <div><button class="btn" id="ubBtn">Unbind license</button> <button class="btn danger" id="ubSure" hidden>Yes, lock this machine</button> <span class="msg" id="ubMsg"></span></div>`
+      : `<div class="alert">This machine is offline. A license can only be unbound while the machine is online. ${state.dev ? "As the developer you can still unbind it in Firebase." : "Contact the developer."}</div>`}
+    </div>
   `;
   $("#closeSheet").onclick = closeSheet;
 
@@ -731,12 +747,22 @@ async function openUnit(id) {
       setMsg("unitMsg", error ? error.message : "Saved.", error ? "bad" : "ok");
       if (!error) { await loadAll(); }
     });
-  } else if (!pending) {
-    $("#ubBtn").addEventListener("click", async () => {
-      const { error } = await db.from("unbind_requests").insert({ unit_id: id, requested_by: state.me.id, reason: $("#ubReason").value.trim() || null });
-      setMsg("ubMsg", error ? error.message : "Sent. The developer will check it.", error ? "bad" : "ok");
-    });
   }
+  const UB = { offline: "The machine is offline. Turn it on and connect it to the internet first.", open: "An unbind is already in progress.",
+    not_yours: "This unit is not in your account.", too_late: "The machine already locked itself." };
+  $("#ubBtn")?.addEventListener("click", () => { $("#ubBtn").hidden = true; $("#ubSure").hidden = false;
+    setMsg("ubMsg", "The machine stops taking customers until it is activated again.", "bad"); });
+  $("#ubSure")?.addEventListener("click", async () => {
+    $("#ubSure").disabled = true;
+    const { data, error } = await db.rpc("request_unbind", { p_unit: id, p_reason: $("#ubReason").value });
+    if (error || !data?.ok) { $("#ubSure").disabled = false; return setMsg("ubMsg", error?.message || UB[data.reason] || data.reason, "bad"); }
+    openUnit(id);
+  });
+  $("#ubCancel")?.addEventListener("click", async () => {
+    const { data, error } = await db.rpc("cancel_unbind", { p_id: $("#ubCancel").dataset.id });
+    if (error || !data?.ok) return setMsg("ubMsg", error?.message || UB[data.reason] || data.reason, "bad");
+    openUnit(id);
+  });
 }
 
 // ───── Clients ─────
@@ -768,21 +794,45 @@ function renderAccounts() {
 }
 
 // ───── Unbind requests ─────
+const UB_LABEL = { pending: ["Waiting for machine", "warn"], locked: ["Locked · free the key", "warn"], done: ["Done", "ok"],
+  rejected: ["Rejected", "bad"], cancelled: ["Cancelled", "off"] };
 async function renderUnbind() {
   const { data, error } = await db.from("unbind_requests").select("*").order("created_at", { ascending: false }).limit(100);
   if (error) { $("#unbindTable").innerHTML = `<tr><td>${esc(error.message)}</td></tr>`; return; }
-  const name = id => { const u = state.units.find(x => x.id === id); return u ? unitName(u) + " · " + u.device_id : id; };
-  $("#unbindTable").innerHTML = `<tr><th>When</th><th>Unit</th><th>Reason</th><th>Status</th>${state.dev ? "<th></th>" : ""}</tr>` +
-    ((data || []).map(r => `<tr><td>${esc(dt(r.created_at))}</td><td>${esc(name(r.unit_id))}</td><td class="wrap-text">${esc(r.reason || "")}</td>
-      <td><span class="pill ${r.status === "pending" ? "warn" : r.status === "rejected" ? "bad" : "ok"}">${esc(r.status)}</span></td>
-      ${state.dev ? `<td>${r.status === "pending" ? `<button class="btn" data-ub="${r.id}" data-st="done">Done (unbound)</button> <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>` : ""}</td>` : ""}</tr>`).join("")
-      || `<tr><td colspan="5" class="muted">No requests.</td></tr>`);
+  const unit = id => state.units.find(x => x.id === id);
+  $("#unbindTable").innerHTML = `<tr><th>When</th><th>Unit</th>${state.dev ? "<th>License key</th>" : ""}<th>Reason</th><th>Status</th>${state.dev ? "<th></th>" : ""}</tr>` +
+    ((data || []).map(r => { const u = unit(r.unit_id), lb = UB_LABEL[r.status] || [r.status, "off"];
+      return `<tr><td>${esc(dt(r.created_at))}</td><td>${esc(u ? unitName(u) : "")}<div class="muted mono">${esc(u?.device_id || "")}</div></td>
+      ${state.dev ? `<td class="mono">${esc(u?.license_key || "")}</td>` : ""}
+      <td class="wrap-text">${esc(r.reason || "")}</td><td><span class="pill ${lb[1]}">${esc(lb[0])}</span></td>
+      ${state.dev ? `<td>${r.status === "locked" ? `<button class="btn primary" data-ub="${r.id}" data-st="done">Done (deviceId cleared)</button>`
+        : r.status === "pending" ? `<button class="btn" data-ub="${r.id}" data-st="done">Done (unbound offline)</button> <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>` : ""}</td>` : ""}</tr>`; }).join("")
+      || `<tr><td colspan="6" class="muted">No requests.</td></tr>`);
   document.querySelectorAll("[data-ub]").forEach(b => b.addEventListener("click", async () => {
     b.disabled = true;
     const { error } = await db.from("unbind_requests").update({ status: b.dataset.st, decided_at: new Date().toISOString(), decided_by: state.me.id }).eq("id", b.dataset.ub);
     if (error) { b.disabled = false; b.textContent = error.message; } else renderUnbind();
   }));
 }
+
+// ───── Add unit (license key) ─────
+$("#addUnitBtn").addEventListener("click", () => { $("#addUnitForm").hidden = false; $("#addKey").focus(); });
+$("#addCancel").addEventListener("click", () => { $("#addUnitForm").hidden = true; setMsg("addMsg", ""); });
+$("#addUnitForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const key = $("#addKey").value.trim();
+  if (key.length < 6) return setMsg("addMsg", "Type the whole license key.", "bad");
+  setMsg("addMsg", "Checking…");
+  const { data, error } = await db.rpc("claim_unit", { p_key: key });
+  if (error) return setMsg("addMsg", error.message, "bad");
+  const why = { not_found: "No machine with that key yet. Turn the machine on with internet, wait 2 minutes, then try again.",
+    taken: "That machine is linked to another account. Contact the developer.", too_many: "Too many tries. Wait an hour and try again.",
+    login: "Log in again." };
+  if (!data.ok) return setMsg("addMsg", why[data.reason] || data.reason, "bad");
+  setMsg("addMsg", data.already ? `${data.unit} is already in your account.` : `Added ${data.unit}.`, "ok");
+  $("#addKey").value = "";
+  await loadAll();
+});
 
 renderDownloads($("#dlPublic"));
 boot();
