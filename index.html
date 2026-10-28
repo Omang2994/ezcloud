@@ -13,7 +13,7 @@
 :root {
   --bg: #F3F5F9; --surface: #FFFFFF; --surface-2: #EBEFF6; --line: #D9DFEA;
   --ink: #141A22; --ink-2: #4A5462; --muted: #7A8496;
-  --accent: #2350D8; --accent-soft: #E3EAFC; --on-accent: #FFFFFF;
+  --accent: #15803D; --accent-soft: #DCF3E4; --on-accent: #FFFFFF;
   --ok: #15803D; --ok-soft: #DCF3E4; --warn: #B45309; --warn-soft: #FDF0DC; --bad: #C2263A; --bad-soft: #FBE3E6;
   --f-display: "Outfit", "Segoe UI", system-ui, sans-serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
@@ -25,13 +25,13 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0F141B; --surface: #171E28; --surface-2: #1F2834; --line: #2B3644;
   --ink: #E8EDF4; --ink-2: #B3BDCB; --muted: #8590A2;
-  --accent: #6E91FF; --accent-soft: #1E2A4A; --on-accent: #0F141B;
+  --accent: #4ADE80; --accent-soft: #133022; --on-accent: #0F141B;
   --ok: #4ADE80; --ok-soft: #133022; --warn: #FBBF24; --warn-soft: #33270F; --bad: #FB7185; --bad-soft: #3A1820;
   color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0F141B; --surface: #171E28; --surface-2: #1F2834; --line: #2B3644;
   --ink: #E8EDF4; --ink-2: #B3BDCB; --muted: #8590A2;
-  --accent: #6E91FF; --accent-soft: #1E2A4A; --on-accent: #0F141B;
+  --accent: #4ADE80; --accent-soft: #133022; --on-accent: #0F141B;
   --ok: #4ADE80; --ok-soft: #133022; --warn: #FBBF24; --warn-soft: #33270F; --bad: #FB7185; --bad-soft: #3A1820;
   color-scheme: dark; }
 
@@ -59,7 +59,7 @@ label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(-
 /* login */
 #login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px; }
 .login-box { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: grid; gap: 16px; }
-.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 20px; color: var(--accent); }
 .brand i { width: 30px; height: 30px; border-radius: 9px; background: var(--logo-bg); display: grid; place-items: center; color: var(--logo-fg); font-weight: 700; font-style: normal; font-size: 15px; }
 .msg { min-height: 22px; font-weight: 600; font-size: 14px; }
 .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
