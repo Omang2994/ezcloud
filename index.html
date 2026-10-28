@@ -291,6 +291,7 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
       <button class="tab" role="tab" data-tab="units" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>EzPrint Pro</span></button>
+      <button class="tab" role="tab" data-tab="licenses" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg><span>Licenses</span></button>
       <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="9" cy="8" r="4"/><path d="M17 11a3 3 0 1 0 0-6M21 21v-1a5 5 0 0 0-3-4.6"/></svg><span>Clients</span></button>
       <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3"/></svg><span>Accounts</span></button>
       <button class="tab" role="tab" data-tab="unbind" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l-2 2a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M15 9l2-2a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0M3 3l18 18"/></svg><span>Unbind</span></button>
@@ -355,6 +356,21 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     </section>
 
     <!-- Unbind requests -->
+    <section id="tab-licenses" hidden style="display:grid;gap:16px">
+      <div class="toolbar">
+        <select id="licFilter" aria-label="Show" style="max-width:240px">
+          <option value="all">All licenses</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+          <option value="long">Offline 7 days or more</option>
+          <option value="unbound">Locked / unbound</option>
+        </select>
+        <span class="grow"></span>
+        <span class="muted" id="licSummary" style="font-size:14px"></span>
+      </div>
+      <div class="panel"><div class="table-wrap"><table id="licTable"></table></div></div>
+    </section>
+
     <section id="tab-unbind" hidden style="display:grid;gap:16px">
       <div class="panel">
         <p class="muted" style="margin:0" id="unbindHint"></p>
@@ -471,11 +487,11 @@ async function start(session) {
 }
 
 // ───── Tabs ─────
-const TABS = ["home", "units", "clients", "accounts", "unbind", "downloads"];
+const TABS = ["home", "units", "licenses", "clients", "accounts", "unbind", "downloads"];
 const HEADS = {
   home: ["Home", "Your EzSoft products."], units: ["EzPrint Pro", "Every EzPrint Pro machine, live."],
   clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Who can log in, and which shop they see."],
-  unbind: ["Unbind requests", "Moving a license to a new coin slot."], downloads: ["Downloads", "Apps, installers and firmware."]
+  unbind: ["Unbind requests", "Moving a license to a new coin slot."], licenses: ["Licenses", "Every EzPrint Pro license and when it was last online."], downloads: ["Downloads", "Apps, installers and firmware."]
 };
 function showTab(name) {
   document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
@@ -486,6 +502,7 @@ function showTab(name) {
   if (name === "clients") renderClients();
   if (name === "accounts") renderAccounts();
   if (name === "unbind") renderUnbind();
+  if (name === "licenses") renderLicenses();
   if (name === "downloads") renderDownloads($("#dlApp"));
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
@@ -542,16 +559,18 @@ function renderDownloads(el) {
 
 // ───── Data ─────
 async function loadAll() {
-  const [u, c, p] = await Promise.all([
+  const [u, c, p, ub] = await Promise.all([
     db.from("unit_overview").select("*").order("created_at"),
     db.from("clients").select("*").order("name"),
-    state.dev ? db.from("profiles").select("*").order("created_at") : Promise.resolve({ data: [] })
+    state.dev ? db.from("profiles").select("*").order("created_at") : Promise.resolve({ data: [] }),
+    db.from("unbind_requests").select("unit_id,status,created_at,locked_at").order("created_at", { ascending: false }).limit(500)
   ]);
   if (u.error) { $("#units").innerHTML = `<div class="empty">Couldn't load units: ${esc(u.error.message)}</div>`; return; }
-  state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || [];
+  state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || []; state.unbinds = ub.data || [];
   $("#updated").textContent = "Updated " + new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
   renderUnits();
   if (!$("#tab-home").hidden) renderHome();
+  if (!$("#tab-licenses").hidden) renderLicenses();
 }
 $("#refreshBtn").addEventListener("click", loadAll);
 $("#search").addEventListener("input", renderUnits);
@@ -564,7 +583,7 @@ const unitName = u => u.name || u.status?.name || u.device_id;
 /** What needs attention on one unit, worst first. */
 function issues(u) {
   const s = u.status || {}, out = [];
-  if (!u.online) out.push({ kind: "bad", text: "Offline · last report " + ago(u.last_seen) });
+  if (!u.online) out.push({ kind: "bad", text: "Offline · last seen " + ago(u.last_contact) });
   for (const k of ["printerColor", "printerBw"]) {
     const p = s[k];
     if (p && !p.ok) out.push({ kind: "bad", text: (k === "printerBw" ? "B&W printer: " : "Printer: ") + p.detail });
@@ -620,7 +639,7 @@ function renderUnits() {
       <div class="facts">
         <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
         <div class="fact"><small>Paper</small><b>${s.paper ?? "—"}</b></div>
-        <div class="fact"><small>Seen</small><b style="font-size:14px">${esc(ago(u.last_seen))}</b></div>
+        <div class="fact"><small>Seen</small><b style="font-size:14px">${esc(ago(u.last_contact))}</b></div>
       </div>
       ${first ? `<div class="alert ${first.kind === "warn" ? "warn" : ""}">${esc(first.text)}${iss.length > 1 ? ` · +${iss.length - 1} more` : ""}</div>` : ""}
       <div class="muted mono foot">${esc(u.device_id)} · v${esc(u.app_version || "?")}</div>
@@ -674,8 +693,11 @@ async function openUnit(id) {
     <div class="panel">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         ${u.online ? `<span class="pill ok">Online</span>` : `<span class="pill off">Offline</span>`}
-        <span class="muted">Last report ${esc(dt(u.last_seen))} (${esc(ago(u.last_seen))}) · reports every ${u.effective_report_minutes} min</span>
+        <span class="muted">Last seen ${esc(ago(u.last_contact))} · full report ${esc(ago(u.last_seen))}</span>
+        <span class="grow" style="flex:1"></span>
+        <button class="btn" id="pingBtn" type="button">Ping</button>
       </div>
+      <div class="msg" id="pingMsg" hidden></div>
       ${iss.length ? iss.map(i => `<div class="alert ${i.kind === "warn" ? "warn" : ""}">${esc(i.text)}</div>`).join("") : `<div class="muted">Everything looks fine.</div>`}
       <div class="facts">
         <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
@@ -735,6 +757,8 @@ async function openUnit(id) {
     </div>
   `;
   $("#closeSheet").onclick = closeSheet;
+  $("#pingBtn").addEventListener("click", () => ping(id));
+  resumePing(id);
 
   if (state.dev) {
     $("#unitForm").addEventListener("submit", async e => {
@@ -806,14 +830,99 @@ async function renderUnbind() {
       ${state.dev ? `<td class="mono">${esc(u?.license_key || "")}</td>` : ""}
       <td class="wrap-text">${esc(r.reason || "")}</td><td><span class="pill ${lb[1]}">${esc(lb[0])}</span></td>
       ${state.dev ? `<td>${r.status === "locked" ? `<button class="btn primary" data-ub="${r.id}" data-st="done">Done (deviceId cleared)</button>`
-        : r.status === "pending" ? `<button class="btn" data-ub="${r.id}" data-st="done">Done (unbound offline)</button> <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>` : ""}</td>` : ""}</tr>`; }).join("")
+        : r.status === "pending" ? `<div class="muted" style="font-size:13px;margin-bottom:6px">Waiting for the machine to lock itself…</div>
+            <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>
+            <button class="btn" data-ask="${r.id}">Unbind offline…</button>
+            <button class="btn danger" data-ub="${r.id}" data-st="done" data-sure="${r.id}" hidden>Yes, I cleared deviceId in Firebase</button>` : ""}</td>` : ""}</tr>`; }).join("")
       || `<tr><td colspan="6" class="muted">No requests.</td></tr>`);
+  document.querySelectorAll("[data-ask]").forEach(b => b.addEventListener("click", () => {
+    b.hidden = true; document.querySelector(`[data-sure="${b.dataset.ask}"]`).hidden = false;
+  }));
   document.querySelectorAll("[data-ub]").forEach(b => b.addEventListener("click", async () => {
     b.disabled = true;
     const { error } = await db.from("unbind_requests").update({ status: b.dataset.st, decided_at: new Date().toISOString(), decided_by: state.me.id }).eq("id", b.dataset.ub);
     if (error) { b.disabled = false; b.textContent = error.message; } else renderUnbind();
   }));
 }
+
+// ───── Ping ─────
+// The machine checks in every few minutes; a ping makes it send a full report at its next check-in.
+const pings = {};   // unit id -> { at, deadline }
+function fmtLeft(sec) { const m = Math.floor(sec / 60), s2 = String(sec % 60).padStart(2, "0"); return `${m}:${s2}`; }
+async function ping(id) {
+  const { data, error } = await db.rpc("request_ping", { p_unit: id });
+  if (error) return showPing(id, error.message, "bad");
+  if (!data.ok && data.reason !== "wait") return showPing(id, data.reason === "not_yours" ? "This unit is not in your account." : data.reason, "bad");
+  const u = state.units.find(x => x.id === id);
+  const secs = data.pollSeconds || u?.poll_seconds || 300;
+  pings[id] = { at: new Date(data.at), deadline: new Date(new Date(data.at).getTime() + (secs + 90) * 1000), next: new Date(new Date(data.at).getTime() + secs * 1000) };
+  watchPing(id);
+}
+function resumePing(id) { if (pings[id]) watchPing(id); }
+function showPing(id, text, kind) {
+  if ($("#sheet").hidden || !$("#pingMsg")) return;
+  const el = $("#pingMsg"); el.hidden = false; el.textContent = text; el.className = "msg " + kind;
+}
+async function watchPing(id) {
+  const p = pings[id]; if (!p || p.watching) return;
+  p.watching = true;
+  try {
+    while (true) {
+      const left = Math.max(0, Math.round((p.next - Date.now()) / 1000));
+      const btn = $("#pingBtn");
+      if (btn) { btn.disabled = left > 0; btn.textContent = left > 0 ? `Ping again in ${fmtLeft(left)}` : "Ping"; }
+      if (!p.done) {
+        const { data } = await db.from("unit_overview").select("ping_answered_at,last_seen").eq("id", id).maybeSingle();
+        if (data?.ping_answered_at && new Date(data.ping_answered_at) >= p.at) {
+          p.done = true; const s = Math.round((new Date(data.ping_answered_at) - p.at) / 1000);
+          showPing(id, `Online · answered in ${s < 90 ? s + " seconds" : Math.round(s / 60) + " minutes"}.`, "ok");
+          loadAll();
+        } else if (Date.now() > p.deadline) {
+          p.done = true; showPing(id, "No answer. The machine is offline (or off, or without internet).", "bad");
+        } else {
+          showPing(id, `Waiting for the machine… it checks in every ${Math.round((state.units.find(x => x.id === id)?.poll_seconds || 300) / 60)} minutes.`, "");
+        }
+      }
+      if (left === 0 && p.done) { if (btn) { btn.disabled = false; btn.textContent = "Ping"; } delete pings[id]; break; }
+      await new Promise(r => setTimeout(r, p.done ? 1000 : 5000));
+    }
+  } finally { p.watching = false; }
+}
+
+// ───── Licenses ─────
+const mask = k => !k ? "—" : k.length <= 4 ? k : k.slice(0, -4).replace(/[A-Za-z0-9]/g, "•") + k.slice(-4);
+function licenseState(u) {
+  const last = (state.unbinds || []).find(r => r.unit_id === u.id && ["pending", "locked", "done"].includes(r.status));
+  if (last?.status === "locked" || last?.status === "done" || u.status?.license === "Unbound") return { key: "unbound", text: last?.status === "locked" ? "Locked · key not freed yet" : "Unbound", cls: "off" };
+  if (last?.status === "pending") return { key: u.online ? "online" : "offline", text: "Unbinding…", cls: "warn" };
+  if (u.online) return { key: "online", text: "Online", cls: "ok" };
+  const days = u.last_contact ? (Date.now() - new Date(u.last_contact)) / 86400000 : 999;
+  if (days >= 7) return { key: "long", text: u.last_contact ? `Offline ${Math.floor(days)} days` : "Never online", cls: "bad" };
+  return { key: "offline", text: "Offline", cls: "warn" };
+}
+function renderLicenses() {
+  const list = state.units.filter(u => u.product === "ezprint" && u.license_key);
+  const f = $("#licFilter").value;
+  const rows = list.map(u => ({ u, st: licenseState(u) }))
+    .filter(x => f === "all" || x.st.key === f || (f === "offline" && x.st.key === "long"));
+  const count = k => list.filter(u => licenseState(u).key === k).length;
+  $("#licSummary").textContent = `${list.length} license${list.length === 1 ? "" : "s"} · ${count("online")} online · ${count("long")} offline 7+ days`;
+  $("#licTable").innerHTML = `<tr><th>License key</th><th>Unit</th>${state.dev ? "<th>Client</th>" : ""}<th>Last online</th><th>Status</th></tr>` +
+    (rows.map(({ u, st }) => `<tr>
+      <td><span class="mono" data-key="${esc(u.license_key)}" data-shown="0">${esc(mask(u.license_key))}</span>
+        <button class="btn" data-eye style="padding:3px 8px;margin-left:6px" aria-label="Show key"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+      <td>${esc(unitName(u))}<div class="muted mono" style="font-size:12px">${esc(u.device_id)}</div></td>
+      ${state.dev ? `<td>${esc(clientName(u.client_id) || "—")}</td>` : ""}
+      <td>${u.online ? "now" : esc(ago(u.last_contact))}<div class="muted" style="font-size:12px">${esc(dt(u.last_contact))}</div></td>
+      <td><span class="pill ${st.cls}">${esc(st.text)}</span></td></tr>`).join("")
+      || `<tr><td colspan="5" class="muted">${list.length ? "No licenses match." : "No licenses yet. A license shows here after its machine is activated and online once."}</td></tr>`);
+  document.querySelectorAll("[data-eye]").forEach(b => b.addEventListener("click", () => {
+    const k = b.previousElementSibling, shown = k.dataset.shown === "1";
+    k.textContent = shown ? mask(k.dataset.key) : k.dataset.key; k.dataset.shown = shown ? "0" : "1";
+    b.setAttribute("aria-label", shown ? "Show key" : "Hide key");
+  }));
+}
+$("#licFilter").addEventListener("change", renderLicenses);
 
 // ───── Add unit (license key) ─────
 $("#addUnitBtn").addEventListener("click", () => { $("#addUnitForm").hidden = false; $("#addKey").focus(); });
