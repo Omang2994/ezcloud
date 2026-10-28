@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EzCloud</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2716%27 fill=%27%233F4651%27/%3E%3Ctext x=%2732%27 y=%2743%27 font-family=%27Segoe UI,Arial,sans-serif%27 font-size=%2730%27 font-weight=%27700%27 fill=%27%234ADE80%27 text-anchor=%27middle%27%3EEz%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect x=%274%27 y=%274%27 width=%2756%27 height=%2756%27 rx=%2714%27 fill=%27white%27 stroke=%27black%27 stroke-width=%276%27/%3E%3Ctext x=%2732%27 y=%2743%27 font-family=%27Segoe UI,Arial,sans-serif%27 font-size=%2730%27 font-weight=%27700%27 fill=%27black%27 text-anchor=%27middle%27%3EEz%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -14,10 +14,9 @@
 :root {
   --bg: #F7F6F2; --side: #EFEDE6; --surface: #FFFFFF; --surface-2: #F2F0EA; --line: #E4E0D6; --line-2: #D6D1C4;
   --ink: #1F1E1B; --ink-2: #57544C; --muted: #8A867B;
-  --accent: #1C7A47; --accent-soft: #E2F0E7; --on-accent: #FFFFFF;
+  --accent: #1F1E1B; --accent-soft: #EAE7DF; --on-accent: #FFFFFF;
   --ok: #1C7A47; --ok-soft: #E2F0E7; --warn: #A15C07; --warn-soft: #F8ECD8; --bad: #B4232F; --bad-soft: #F8E1E2;
-  --logo-bg: #3D3B36; --logo-fg: #5FD08F;
-  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   --r: 12px;
@@ -26,15 +25,15 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #1D1C1A; --side: #181715; --surface: #262522; --surface-2: #2E2C29; --line: #36342F; --line-2: #45423C;
   --ink: #ECE9E2; --ink-2: #B8B3A8; --muted: #8C877C;
-  --accent: #5FC98C; --accent-soft: #1F3428; --on-accent: #10150F;
+  --accent: #ECE9E2; --accent-soft: #34322E; --on-accent: #1D1C1A;
   --ok: #5FC98C; --ok-soft: #1F3428; --warn: #E3A54A; --warn-soft: #3A2C16; --bad: #F07A80; --bad-soft: #3D1F22;
-  --logo-bg: #3A3833; color-scheme: dark; } }
+  color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #1D1C1A; --side: #181715; --surface: #262522; --surface-2: #2E2C29; --line: #36342F; --line-2: #45423C;
   --ink: #ECE9E2; --ink-2: #B8B3A8; --muted: #8C877C;
-  --accent: #5FC98C; --accent-soft: #1F3428; --on-accent: #10150F;
+  --accent: #ECE9E2; --accent-soft: #34322E; --on-accent: #1D1C1A;
   --ok: #5FC98C; --ok-soft: #1F3428; --warn: #E3A54A; --warn-soft: #3A2C16; --bad: #F07A80; --bad-soft: #3D1F22;
-  --logo-bg: #3A3833; color-scheme: dark; }
+  color-scheme: dark; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -62,8 +61,8 @@ label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(-
 .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
 .link { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; justify-self: start; }
 
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--accent); letter-spacing: -0.01em; }
-.brand i { width: 28px; height: 28px; border-radius: 8px; background: var(--logo-bg); display: grid; place-items: center; color: var(--logo-fg); font-weight: 700; font-style: normal; font-size: 13px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+.brand i { width: 28px; height: 28px; border-radius: 8px; background: transparent; border: 2px solid var(--ink); display: grid; place-items: center; color: var(--ink); font-weight: 700; font-style: normal; font-size: 13px; }
 
 /* login */
 #login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px;
