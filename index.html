@@ -59,6 +59,7 @@ input:focus, select:focus { border-color: var(--accent); outline: none; box-shad
 label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .msg { min-height: 22px; font-weight: 600; font-size: 14px; }
 .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
+.login-card .msg:empty { min-height: 0; margin-block: -7px; }
 .link { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; justify-self: start; }
 
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
@@ -75,37 +76,42 @@ label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(-
 .pw button { position: absolute; right: 3px; bottom: 3px; height: 34px; width: 38px; border: 0; background: transparent; cursor: pointer; color: var(--muted); border-radius: 7px; display: grid; place-items: center; }
 .pw button:hover { color: var(--ink); }
 
-/* landing (logged out) */
+/* landing (logged out): one 1120px column; every block shares the same left and right edges */
 #login { display: block; min-height: auto; padding: 0; place-items: initial; }
-.landing { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; min-height: 100vh; max-width: 1240px; margin: 0 auto;
-  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(24px, env(safe-area-inset-right, 0px)) 24px max(24px, env(safe-area-inset-left, 0px)); }
-.land-left { display: grid; grid-template-rows: auto 1fr auto; gap: 24px; }
-.land-center { display: grid; align-content: center; justify-items: center; gap: 22px; text-align: center; }
-.land-center h1 { font-size: clamp(34px, 4.4vw, 54px); line-height: 1.08; max-width: 14ch; }
-.land-center .lede { margin: -8px 0 0; color: var(--ink-2); font-size: 18px; font-family: var(--f-display); }
-.land-center .login-box { text-align: left; }
-.land-foot { display: flex; justify-content: center; }
-.btn.soft { background: var(--surface-2); border-color: transparent; }
-.land-right { background: var(--surface-2); border-radius: 22px; display: grid; place-items: center; padding: 40px 28px; }
-.marks { display: grid; gap: 30px; width: min(380px, 100%); }
-.mark { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: center; }
-.mark i { grid-row: span 2; width: 58px; height: 58px; border: 2.5px solid var(--ink); border-radius: 15px; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 22px; }
-.mark b { font-family: var(--f-display); font-weight: 600; font-size: 30px; line-height: 1.1; }
+.land-wrap { max-width: 1120px; margin: 0 auto; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+.land-top { display: flex; align-items: center; justify-content: space-between; padding-block: calc(env(safe-area-inset-top, 0px) + 22px) 22px; }
+.land-top a { color: var(--ink-2); font-weight: 600; text-decoration: none; font-size: 15px; }
+.land-top a:hover { color: var(--ink); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: stretch; padding-block: 36px 64px; }
+.hero-left { display: grid; align-content: center; gap: 22px; }
+.hero-left h1 { font-size: clamp(36px, 4.2vw, 52px); line-height: 1.08; }
+.hero-left .lede { margin: -6px 0 6px; color: var(--ink-2); font-size: 18px; max-width: 38ch; }
+.hero-left .login-box { width: min(400px, 100%); }
+.hero-right { background: var(--surface-2); border: 1px solid var(--line); border-radius: 20px; display: grid; align-content: center; padding: 36px; }
+.marks { display: grid; }
+.mark { display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 18px; align-items: center; }
+.marks .mark { padding-block: 22px; border-top: 1px solid var(--line-2); }
+.marks .mark:first-child { border-top: 0; padding-top: 0; }
+.marks .mark:last-child { padding-bottom: 0; }
+.mark i { grid-row: 1 / span 2; width: 52px; height: 52px; border: 2px solid var(--ink); border-radius: 14px; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 18px; }
+.mark b { font-family: var(--f-display); font-weight: 600; font-size: 26px; line-height: 1.15; }
 .mark b em { font-style: normal; color: var(--muted); font-weight: 500; }
-.mark span { color: var(--ink-2); font-size: 15px; }
-.mark.soon { opacity: .55; }
+.mark span { color: var(--ink-2); font-size: 15px; line-height: 1.35; }
+.mark .badge { justify-self: start; }
+.mark.soon i, .mark.soon b { opacity: .5; }
 
-.dl { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px;
-  padding: 24px max(24px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 60px) max(24px, env(safe-area-inset-left, 0px)); }
-.dl > h2 { font-size: 30px; }
-.dl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-.dl-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
-.dl-card h3 { font-family: var(--f-display); font-size: 20px; font-weight: 600; margin-bottom: 6px; }
-.dl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.dl { display: grid; gap: 20px; padding-block: 8px calc(env(safe-area-inset-bottom, 0px) + 64px); border-top: 1px solid var(--line); padding-top: 48px; }
+.dl-head h2 { font-size: 32px; }
+.dl-head p { margin: 4px 0 0; color: var(--ink-2); }
+.dl-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.dl-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px 8px; display: flex; flex-direction: column; }
+.dl-card h3 { font-family: var(--f-display); font-size: 21px; font-weight: 600; padding-bottom: 12px; }
+.dl-row { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 12px; align-items: center; min-height: 66px; border-top: 1px solid var(--line); }
 .dl-row b { display: block; font-weight: 600; }
-.dl-row small { color: var(--muted); font-size: 13px; }
-.dl-row a.btn { text-decoration: none; color: var(--on-accent); }
-.dl-row .btn[aria-disabled="true"] { opacity: .55; cursor: default; pointer-events: none; }
+.dl-row small { display: block; color: var(--muted); font-size: 13px; }
+.dl-row .btn { text-align: center; text-decoration: none; font-size: 14px; padding: 7px 10px; }
+.dl-row a.btn { color: var(--on-accent); }
+.dl-row .btn[aria-disabled="true"] { color: var(--muted); background: transparent; cursor: default; pointer-events: none; }
 
 /* product home (logged in) */
 .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
@@ -219,14 +225,17 @@ td.wrap-text { white-space: normal; min-width: 220px; }
   .form-row { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr; }
   .sheet { border-left: 0; }
-  .landing { grid-template-columns: 1fr; min-height: auto; gap: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  .land-center { padding-block: 20px 4px; }
-  .land-right { padding: 28px 20px; }
-  .mark i { width: 48px; height: 48px; font-size: 18px; }
-  .mark b { font-size: 24px; }
-  .dl { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .land-wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hero { grid-template-columns: 1fr; gap: 28px; padding-block: 8px 40px; }
+  .hero-left .login-box { width: 100%; }
+  .hero-right { padding: 24px 20px; }
+  .mark { grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; }
+  .mark i { width: 44px; height: 44px; font-size: 16px; border-radius: 12px; }
+  .mark b { font-size: 22px; }
+  .dl { padding-top: 32px; }
   .dl-grid, .prod-grid { grid-template-columns: 1fr; }
 }
+@media (min-width: 861px) and (max-width: 1100px) { .dl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: no-preference) { .card, .tab, .btn { transition: background .15s, border-color .15s, box-shadow .15s; } }
 </style>
 </head>
@@ -234,12 +243,15 @@ td.wrap-text { white-space: normal; min-width: 220px; }
 
 <!-- ───── Login ───── -->
 <section id="login" hidden>
- <div class="landing">
-  <div class="land-left">
+ <div class="land-wrap">
+  <header class="land-top">
     <div class="brand"><i>Ez</i>EzSoft</div>
-    <div class="land-center">
-      <h1>Every vendo, one place</h1>
-      <p class="lede">Status, sales and alerts for your EzSoft machines</p>
+    <a href="#downloads">Downloads</a>
+  </header>
+  <div class="hero">
+    <div class="hero-left">
+      <h1>Every vendo,<br>one place</h1>
+      <p class="lede">Status, sales and alerts for your EzSoft machines, on your phone or PC.</p>
   <form class="login-box" id="loginForm">
     <div class="login-card">
     <label>Email <input id="email" type="email" autocomplete="email" required></label>
@@ -257,20 +269,19 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <button class="btn primary" type="submit">Save new password</button>
   </form>
     </div>
-    <div class="land-foot"><a class="btn soft" href="#downloads" style="text-decoration:none;color:inherit">Downloads</a></div>
-  </div>
-  <div class="land-right" aria-label="EzSoft products">
-    <div class="marks">
-      <div class="mark"><i>Ez</i><b>EzTab <em>Pro</em></b><span>Piso tablet kiosk</span></div>
-      <div class="mark"><i>Ez</i><b>EzPrint</b><span>Printing, ID copy and photocopy vendo</span></div>
-      <div class="mark soon"><i>Ez</i><b>EzFi</b><span>PisoWiFi · coming soon</span></div>
+    <div class="hero-right" aria-label="EzSoft products">
+      <div class="marks">
+        <div class="mark"><i>Ez</i><b>EzTab <em>Pro</em></b><span>Piso tablet kiosk</span></div>
+        <div class="mark"><i>Ez</i><b>EzPrint</b><span>Printing, ID copy and photocopy vendo</span></div>
+        <div class="mark soon"><i>Ez</i><b>EzFi</b><span>PisoWiFi · coming soon</span></div>
+      </div>
     </div>
   </div>
+  <section class="dl" id="downloads">
+    <div class="dl-head"><h2>Downloads</h2><p>Apps, installers and firmware for EzSoft machines.</p></div>
+    <div class="dl-grid" id="dlPublic"></div>
+  </section>
  </div>
- <section class="dl" id="downloads">
-   <h2>Downloads</h2>
-   <div class="dl-grid" id="dlPublic"></div>
- </section>
 </section>
 
 <!-- ───── App ───── -->
