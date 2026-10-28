@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>EzCloud</title>
+<title>EzSoft</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect x=%274%27 y=%274%27 width=%2756%27 height=%2756%27 rx=%2714%27 fill=%27white%27 stroke=%27black%27 stroke-width=%276%27/%3E%3Ctext x=%2732%27 y=%2743%27 font-family=%27Segoe UI,Arial,sans-serif%27 font-size=%2730%27 font-weight=%27700%27 fill=%27black%27 text-anchor=%27middle%27%3EEz%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,6 +74,47 @@ label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(-
 .pw input { padding-right: 46px; }
 .pw button { position: absolute; right: 3px; bottom: 3px; height: 34px; width: 38px; border: 0; background: transparent; cursor: pointer; color: var(--muted); border-radius: 7px; display: grid; place-items: center; }
 .pw button:hover { color: var(--ink); }
+
+/* landing (logged out) */
+#login { display: block; min-height: auto; padding: 0; place-items: initial; }
+.landing { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; min-height: 100vh; max-width: 1240px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(24px, env(safe-area-inset-right, 0px)) 24px max(24px, env(safe-area-inset-left, 0px)); }
+.land-left { display: grid; grid-template-rows: auto 1fr auto; gap: 24px; }
+.land-center { display: grid; align-content: center; justify-items: center; gap: 22px; text-align: center; }
+.land-center h1 { font-size: clamp(34px, 4.4vw, 54px); line-height: 1.08; max-width: 14ch; }
+.land-center .lede { margin: -8px 0 0; color: var(--ink-2); font-size: 18px; font-family: var(--f-display); }
+.land-center .login-box { text-align: left; }
+.land-foot { display: flex; justify-content: center; }
+.btn.soft { background: var(--surface-2); border-color: transparent; }
+.land-right { background: var(--surface-2); border-radius: 22px; display: grid; place-items: center; padding: 40px 28px; }
+.marks { display: grid; gap: 30px; width: min(380px, 100%); }
+.mark { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: center; }
+.mark i { grid-row: span 2; width: 58px; height: 58px; border: 2.5px solid var(--ink); border-radius: 15px; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 22px; }
+.mark b { font-family: var(--f-display); font-weight: 600; font-size: 30px; line-height: 1.1; }
+.mark b em { font-style: normal; color: var(--muted); font-weight: 500; }
+.mark span { color: var(--ink-2); font-size: 15px; }
+.mark.soon { opacity: .55; }
+
+.dl { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px;
+  padding: 24px max(24px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 60px) max(24px, env(safe-area-inset-left, 0px)); }
+.dl > h2 { font-size: 30px; }
+.dl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.dl-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.dl-card h3 { font-family: var(--f-display); font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+.dl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.dl-row b { display: block; font-weight: 600; }
+.dl-row small { color: var(--muted); font-size: 13px; }
+.dl-row a.btn { text-decoration: none; color: var(--on-accent); }
+.dl-row .btn[aria-disabled="true"] { opacity: .55; cursor: default; pointer-events: none; }
+
+/* product home (logged in) */
+.prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.prod { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; text-align: left; cursor: pointer; align-content: start; }
+.prod:hover { border-color: var(--line-2); box-shadow: 0 2px 10px rgb(0 0 0 / .05); }
+.prod:disabled { cursor: default; opacity: .6; box-shadow: none; }
+.prod .mark i { width: 46px; height: 46px; font-size: 17px; border-radius: 12px; }
+.prod .mark b { font-size: 24px; }
+.prod .facts { border-top: 1px solid var(--line); }
 
 /* shell */
 .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
@@ -178,6 +219,13 @@ td.wrap-text { white-space: normal; min-width: 220px; }
   .form-row { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr; }
   .sheet { border-left: 0; }
+  .landing { grid-template-columns: 1fr; min-height: auto; gap: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .land-center { padding-block: 20px 4px; }
+  .land-right { padding: 28px 20px; }
+  .mark i { width: 48px; height: 48px; font-size: 18px; }
+  .mark b { font-size: 24px; }
+  .dl { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .dl-grid, .prod-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: no-preference) { .card, .tab, .btn { transition: background .15s, border-color .15s, box-shadow .15s; } }
 </style>
@@ -186,10 +234,13 @@ td.wrap-text { white-space: normal; min-width: 220px; }
 
 <!-- ───── Login ───── -->
 <section id="login" hidden>
+ <div class="landing">
+  <div class="land-left">
+    <div class="brand"><i>Ez</i>EzSoft</div>
+    <div class="land-center">
+      <h1>Every vendo, one place</h1>
+      <p class="lede">Status, sales and alerts for your EzSoft machines</p>
   <form class="login-box" id="loginForm">
-    <div class="brand"><i>Ez</i>EzCloud</div>
-    <h1>Welcome back</h1>
-    <p class="muted" style="margin:-8px 0 0">Your EzPrint units: online or offline, paper, printer and sales.</p>
     <div class="login-card">
     <label>Email <input id="email" type="email" autocomplete="email" required></label>
     <label>Password <span class="pw"><input id="password" type="password" autocomplete="current-password" required minlength="6"><button type="button" class="eye" aria-label="Show password"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
@@ -200,32 +251,51 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     </div>
   </form>
   <form class="login-box" id="newPwForm" hidden>
-    <div class="brand"><i>Ez</i>EzCloud</div>
-    <h1>Set a new password</h1>
+    <h2 style="font-size:26px;text-align:center">Set a new password</h2>
     <label>New password <span class="pw"><input id="newPassword" type="password" autocomplete="new-password" required minlength="6"><button type="button" class="eye" aria-label="Show password"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
     <div class="msg" id="newPwMsg"></div>
     <button class="btn primary" type="submit">Save new password</button>
   </form>
+    </div>
+    <div class="land-foot"><a class="btn soft" href="#downloads" style="text-decoration:none;color:inherit">Downloads</a></div>
+  </div>
+  <div class="land-right" aria-label="EzSoft products">
+    <div class="marks">
+      <div class="mark"><i>Ez</i><b>EzTab <em>Pro</em></b><span>Piso tablet kiosk</span></div>
+      <div class="mark"><i>Ez</i><b>EzPrint</b><span>Printing, ID copy and photocopy vendo</span></div>
+      <div class="mark soon"><i>Ez</i><b>EzFi</b><span>PisoWiFi · coming soon</span></div>
+    </div>
+  </div>
+ </div>
+ <section class="dl" id="downloads">
+   <h2>Downloads</h2>
+   <div class="dl-grid" id="dlPublic"></div>
+ </section>
 </section>
 
 <!-- ───── App ───── -->
 <div id="app" class="shell" hidden>
   <aside class="side">
-    <div class="brand"><i>Ez</i>EzCloud</div>
+    <div class="brand"><i>Ez</i>EzSoft</div>
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" data-tab="units" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>Units</span></button>
+      <button class="tab" role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+      <button class="tab" role="tab" data-tab="units" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>EzPrint</span></button>
       <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="9" cy="8" r="4"/><path d="M17 11a3 3 0 1 0 0-6M21 21v-1a5 5 0 0 0-3-4.6"/></svg><span>Clients</span></button>
       <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3"/></svg><span>Accounts</span></button>
       <button class="tab" role="tab" data-tab="unbind" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l-2 2a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M15 9l2-2a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0M3 3l18 18"/></svg><span>Unbind</span></button>
+      <button class="tab" role="tab" data-tab="downloads" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg><span>Downloads</span></button>
     </nav>
     <div class="me"><span class="who" id="who"></span><button class="btn" id="logoutBtn">Log out</button></div>
   </aside>
 
   <main>
    <div class="page">
-    <header class="page-head"><h1 id="pageTitle">Units</h1><p id="pageSub">Every EzPrint machine, live.</p></header>
+    <header class="page-head"><h1 id="pageTitle">Home</h1><p id="pageSub">Your EzSoft products.</p></header>
+
+    <section id="tab-home" style="display:grid;gap:16px"><div class="prod-grid" id="prodGrid"></div></section>
+    <section id="tab-downloads" hidden><div class="dl-grid" id="dlApp"></div></section>
     <!-- Units -->
-    <section id="tab-units" style="display:grid;gap:20px">
+    <section id="tab-units" hidden style="display:grid;gap:20px">
       <div class="summary" id="summary"></div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Search name, client, chip ID" aria-label="Search units">
@@ -373,20 +443,80 @@ async function start(session) {
     ? "Approve after you unbind the key in Firebase (deviceId cleared). The unit locks itself on its next online check."
     : "Ask the developer to unbind a license (for example when moving it to a new coin slot).";
   await loadAll();
+  // A client with units in one product only: straight to that product.
+  const mine = new Set(state.units.map(u => u.product));
+  showTab(!state.dev && mine.size === 1 && mine.has("ezprint") ? "units" : "home");
 }
 
 // ───── Tabs ─────
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
-  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
-  ["units", "clients", "accounts", "unbind"].forEach(n => $("#tab-" + n).hidden = n !== t.dataset.tab);
-  const head = { units: ["Units", "Every EzPrint machine, live."], clients: ["Clients", "The shops that own your units."],
-    accounts: ["Accounts", "Who can log in, and which shop they see."], unbind: ["Unbind requests", "Moving a license to a new coin slot."] }[t.dataset.tab];
-  $("#pageTitle").textContent = head[0]; $("#pageSub").textContent = head[1];
+const TABS = ["home", "units", "clients", "accounts", "unbind", "downloads"];
+const HEADS = {
+  home: ["Home", "Your EzSoft products."], units: ["EzPrint", "Every EzPrint machine, live."],
+  clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Who can log in, and which shop they see."],
+  unbind: ["Unbind requests", "Moving a license to a new coin slot."], downloads: ["Downloads", "Apps, installers and firmware."]
+};
+function showTab(name) {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
+  TABS.forEach(n => $("#tab-" + n).hidden = n !== name);
+  $("#pageTitle").textContent = HEADS[name][0]; $("#pageSub").textContent = HEADS[name][1];
   window.scrollTo(0, 0);
-  if (t.dataset.tab === "clients") renderClients();
-  if (t.dataset.tab === "accounts") renderAccounts();
-  if (t.dataset.tab === "unbind") renderUnbind();
-}));
+  if (name === "home") renderHome();
+  if (name === "clients") renderClients();
+  if (name === "accounts") renderAccounts();
+  if (name === "unbind") renderUnbind();
+  if (name === "downloads") renderDownloads($("#dlApp"));
+}
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
+
+// ───── Products ─────
+// Products that report to EzSoft. "ready: false" = shown, not openable yet.
+const PRODUCTS = [
+  { id: "ezprint", name: "EzPrint", tag: "Printing, ID copy and photocopy vendo", tab: "units", ready: true },
+  { id: "eztab", name: "EzTab", sub: "Pro", tag: "Piso tablet kiosk", ready: false, note: "Connects in a later EzTab update" },
+  { id: "ezfi", name: "EzFi", tag: "PisoWiFi", ready: false, note: "Coming soon" }
+];
+function renderHome() {
+  $("#prodGrid").innerHTML = PRODUCTS.map(p => {
+    const list = state.units.filter(u => u.product === p.id);
+    const online = list.filter(u => u.online).length;
+    const bad = list.filter(u => issues(u).some(i => i.kind === "bad")).length;
+    const today = list.reduce((t, u) => t + Number(u.status?.today?.total || 0), 0);
+    const body = p.ready
+      ? `<div class="facts"><div class="fact"><small>Units</small><b>${list.length}</b></div>
+           <div class="fact"><small>Online</small><b>${online}</b></div>
+           <div class="fact"><small>Today</small><b>${pesoN(today)}</b></div></div>
+         ${bad ? `<div class="alert">${bad} need${bad === 1 ? "s" : ""} attention</div>` : ""}`
+      : `<div class="muted">${esc(p.note)}</div>`;
+    return `<button class="prod" data-prod="${p.id}" ${p.ready ? "" : "disabled"}>
+      <div class="mark"><i>Ez</i><b>${esc(p.name)}${p.sub ? ` <em>${esc(p.sub)}</em>` : ""}</b><span>${esc(p.tag)}</span></div>${body}</button>`;
+  }).join("");
+  document.querySelectorAll("[data-prod]").forEach(b => b.addEventListener("click", () => {
+    const p = PRODUCTS.find(x => x.id === b.dataset.prod); if (p?.ready) showTab(p.tab);
+  }));
+}
+
+// ───── Downloads ─────
+// Fill in "url" (and "version") when a file is ready; empty url = "Coming soon".
+const DOWNLOADS = [
+  { product: "EzPrint", items: [
+    { name: "EzPrint for Windows", kind: "Installer · Windows 10/11", version: "", url: "" },
+    { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" },
+    { name: "Setup guide", kind: "PDF", version: "", url: "" } ] },
+  { product: "EzTab Pro", items: [
+    { name: "EzTab Pro app", kind: "Android · .apk", version: "", url: "" },
+    { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" },
+    { name: "EzPC for Windows", kind: "Installer · Windows", version: "", url: "" } ] },
+  { product: "EzFi", items: [
+    { name: "EzFi portal", kind: "OpenWrt package", version: "", url: "" },
+    { name: "Coin slot firmware", kind: "ESP32 · .bin", version: "", url: "" } ] }
+];
+function renderDownloads(el) {
+  el.innerHTML = DOWNLOADS.map(g => `<div class="dl-card"><h3>${esc(g.product)}</h3>
+    ${g.items.map(d => `<div class="dl-row"><div><b>${esc(d.name)}</b><small>${esc(d.kind)}${d.version ? " · v" + esc(d.version) : ""}</small></div>
+      ${d.url ? `<a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener">Download</a>`
+              : `<span class="btn" aria-disabled="true">Coming soon</span>`}</div>`).join("")}
+  </div>`).join("");
+}
 
 // ───── Data ─────
 async function loadAll() {
@@ -399,6 +529,7 @@ async function loadAll() {
   state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || [];
   $("#updated").textContent = "Updated " + new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
   renderUnits();
+  if (!$("#tab-home").hidden) renderHome();
 }
 $("#refreshBtn").addEventListener("click", loadAll);
 $("#search").addEventListener("input", renderUnits);
@@ -427,7 +558,7 @@ function issues(u) {
 
 function renderUnits() {
   const q = $("#search").value.trim().toLowerCase(), f = $("#filter").value;
-  const all = state.units;
+  const all = state.units.filter(u => u.product === "ezprint");
   const online = all.filter(u => u.online).length;
   const problems = all.filter(u => issues(u).some(i => i.kind === "bad")).length;
   const today = all.reduce((t, u) => t + Number(u.status?.today?.total || 0), 0);
@@ -447,7 +578,7 @@ function renderUnits() {
 
   if (!all.length) {
     $("#units").innerHTML = `<div class="empty" style="grid-column:1/-1">${state.dev
-      ? "No units yet. A unit appears here a minute after EzPrint starts with an activated license."
+      ? "No EzPrint units yet. A unit appears here a minute after EzPrint starts with an activated license."
       : "No units linked to your account yet. Ask the developer to link your account to your shop."}</div>`;
     return;
   }
@@ -642,6 +773,7 @@ async function renderUnbind() {
   }));
 }
 
+renderDownloads($("#dlPublic"));
 boot();
 </script>
 </body>
