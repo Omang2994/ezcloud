@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EzCloud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: top bar, summary strip, grid of unit cards; a unit opens in a side sheet (full screen on phones). */
+:root {
+  --bg: #F3F5F9; --surface: #FFFFFF; --surface-2: #EBEFF6; --line: #D9DFEA;
+  --ink: #141A22; --ink-2: #4A5462; --muted: #7A8496;
+  --accent: #2350D8; --accent-soft: #E3EAFC; --on-accent: #FFFFFF;
+  --ok: #15803D; --ok-soft: #DCF3E4; --warn: #B45309; --warn-soft: #FDF0DC; --bad: #C2263A; --bad-soft: #FBE3E6;
+  --f-display: "Outfit", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F141B; --surface: #171E28; --surface-2: #1F2834; --line: #2B3644;
+  --ink: #E8EDF4; --ink-2: #B3BDCB; --muted: #8590A2;
+  --accent: #6E91FF; --accent-soft: #1E2A4A; --on-accent: #0F141B;
+  --ok: #4ADE80; --ok-soft: #133022; --warn: #FBBF24; --warn-soft: #33270F; --bad: #FB7185; --bad-soft: #3A1820;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0F141B; --surface: #171E28; --surface-2: #1F2834; --line: #2B3644;
+  --ink: #E8EDF4; --ink-2: #B3BDCB; --muted: #8590A2;
+  --accent: #6E91FF; --accent-soft: #1E2A4A; --on-accent: #0F141B;
+  --ok: #4ADE80; --ok-soft: #133022; --warn: #FBBF24; --warn-soft: #33270F; --bad: #FB7185; --bad-soft: #3A1820;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body); }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+button, input, select { font: inherit; color: inherit; }
+.mono { font-family: var(--f-mono); font-size: 0.86em; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* buttons */
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.danger { color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: default; }
+input, select { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; }
+label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+
+/* login */
+#login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px; }
+.login-box { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: grid; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 20px; }
+.brand i { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; color: var(--on-accent); font-style: normal; font-size: 15px; }
+.msg { min-height: 22px; font-weight: 600; font-size: 14px; }
+.msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
+
+/* app shell */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 12px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.tab { border: 0; background: transparent; padding: 8px 12px; border-radius: 9px; cursor: pointer; font-weight: 600; color: var(--ink-2); }
+.tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+.who { font-size: 14px; color: var(--muted); }
+main { padding-block: 22px 60px; display: grid; gap: 20px; }
+
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
+.stat b { display: block; font-family: var(--f-display); font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.toolbar input { max-width: 320px; }
+.toolbar .grow { flex: 1; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; align-content: start; cursor: pointer; text-align: left; }
+.card:hover { border-color: var(--accent); }
+.card.problem { border-left: 4px solid var(--bad); }
+.card.offline { border-left: 4px solid var(--muted); }
+.card-head { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.card-head h3 { font-size: 18px; }
+.card-head .sub { font-size: 13px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.off { background: var(--surface-2); color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fact { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.fact small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.fact b { font-variant-numeric: tabular-nums; font-size: 17px; }
+.alert { font-size: 14px; font-weight: 600; color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 8px 10px; }
+.alert.warn { color: var(--warn); background: var(--warn-soft); }
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--ink-2); }
+
+/* side sheet */
+.sheet-bg { position: fixed; inset: 0; background: rgb(10 14 20 / .45); z-index: 20; }
+.sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(720px, 100%); background: var(--bg); z-index: 21; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) max(18px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 30px) 18px; display: grid; gap: 16px; align-content: start; }
+.sheet-head { display: flex; gap: 12px; align-items: start; justify-content: space-between; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.panel h3 { font-size: 16px; }
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.wrap-text { white-space: normal; min-width: 220px; }
+.bars { display: flex; align-items: end; gap: 4px; height: 120px; padding-top: 8px; }
+.bars div { flex: 1; min-width: 6px; background: var(--accent); border-radius: 4px 4px 0 0; position: relative; }
+.bars div.zero { background: var(--surface-2); height: 3px !important; }
+.bar-labels { display: flex; gap: 4px; font-size: 11px; color: var(--muted); }
+.bar-labels span { flex: 1; text-align: center; min-width: 6px; overflow: hidden; }
+
+@media (max-width: 760px) {
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-row { grid-template-columns: 1fr; }
+  .tabs { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .15s; } }
+</style>
+</head>
+<body>
+
+<!-- ───── Login ───── -->
+<section id="login" class="wrap" hidden>
+  <form class="login-box" id="loginForm">
+    <div class="brand"><i>Ez</i>EzCloud</div>
+    <p class="muted" style="margin:0">Your EzPrint units: online or offline, paper, printer and sales.</p>
+    <label>Email <input id="email" type="email" autocomplete="email" required></label>
+    <label>Password <input id="password" type="password" autocomplete="current-password" required minlength="6"></label>
+    <div class="msg" id="loginMsg"></div>
+    <button class="btn primary" id="loginBtn" type="submit">Log in</button>
+    <button class="btn" id="signupBtn" type="button">Create account</button>
+  </form>
+</section>
+
+<!-- ───── App ───── -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand"><i>Ez</i>EzCloud</div>
+      <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="units" aria-selected="true">Units</button>
+        <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden>Clients</button>
+        <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden>Accounts</button>
+        <button class="tab" role="tab" data-tab="unbind" aria-selected="false">Unbind requests</button>
+      </nav>
+      <span class="who" id="who"></span>
+      <button class="btn" id="logoutBtn">Log out</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Units -->
+    <section id="tab-units" style="display:grid;gap:20px">
+      <div class="summary" id="summary"></div>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search name, client, chip ID" aria-label="Search units">
+        <select id="filter" aria-label="Show" style="max-width:200px">
+          <option value="all">All units</option>
+          <option value="problem">Needs attention</option>
+          <option value="offline">Offline</option>
+        </select>
+        <span class="grow"></span>
+        <span class="muted" id="updated" style="font-size:14px"></span>
+        <button class="btn" id="refreshBtn">Refresh</button>
+      </div>
+      <div class="grid" id="units"></div>
+    </section>
+
+    <!-- Clients (developer) -->
+    <section id="tab-clients" hidden style="display:grid;gap:16px">
+      <form class="panel" id="clientForm">
+        <h3>Add client</h3>
+        <div class="form-row">
+          <label>Name <input id="cName" required placeholder="Juan's Printshop"></label>
+          <label>Phone <input id="cPhone" placeholder="0917 000 0000"></label>
+        </div>
+        <div><button class="btn primary" type="submit">Add client</button> <span class="msg" id="clientMsg"></span></div>
+      </form>
+      <div class="panel"><h3>Clients</h3><div class="table-wrap"><table id="clientsTable"></table></div></div>
+    </section>
+
+    <!-- Accounts (developer) -->
+    <section id="tab-accounts" hidden style="display:grid;gap:16px">
+      <div class="panel">
+        <h3>Website accounts</h3>
+        <p class="muted" style="margin:0">A new account sees nothing until you link it to a client here.</p>
+        <div class="table-wrap"><table id="accountsTable"></table></div>
+      </div>
+    </section>
+
+    <!-- Unbind requests -->
+    <section id="tab-unbind" hidden style="display:grid;gap:16px">
+      <div class="panel">
+        <h3>Unbind requests</h3>
+        <p class="muted" style="margin:0" id="unbindHint"></p>
+        <div class="table-wrap"><table id="unbindTable"></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ───── Unit sheet ───── -->
+<div class="sheet-bg" id="sheetBg" hidden></div>
+<aside class="sheet" id="sheet" hidden aria-modal="true" role="dialog"></aside>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// EzCloud website. Talks to Supabase with the logged-in person's rights:
+// the database itself (RLS) decides what each person may see. This key is public on purpose.
+const SUPABASE_URL = "https://mxwrkjjbnwkwnodadfua.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1x6p63xQOzsOy7P6hQxImA_Tz42E6xF";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const peso = c => "₱" + (Number(c || 0) / 100).toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const pesoN = n => "₱" + Number(n || 0).toLocaleString("en-PH", { maximumFractionDigits: 2 });
+const dt = s => s ? new Date(s).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+function ago(s) {
+  if (!s) return "never";
+  const m = Math.round((Date.now() - new Date(s)) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + " min ago";
+  const h = Math.round(m / 60);
+  if (h < 48) return h + " h ago";
+  return Math.round(h / 24) + " days ago";
+}
+
+const state = { me: null, dev: false, units: [], clients: [], profiles: [] };
+
+// ───── Login ─────
+async function boot() {
+  const { data: { session } } = await db.auth.getSession();
+  session ? start(session) : showLogin();
+  db.auth.onAuthStateChange((ev, s) => {
+    if (ev === "SIGNED_OUT") showLogin();
+    if (ev === "SIGNED_IN" && s && !state.me) start(s);
+  });
+}
+function showLogin() { state.me = null; $("#app").hidden = true; $("#login").hidden = false; }
+
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  setMsg("loginMsg", "Logging in…");
+  const { data, error } = await db.auth.signInWithPassword({ email: $("#email").value.trim(), password: $("#password").value });
+  if (error) return setMsg("loginMsg", error.message === "Invalid login credentials" ? "Wrong email or password." : error.message, "bad");
+  setMsg("loginMsg", "");
+  start(data.session);
+});
+$("#signupBtn").addEventListener("click", async () => {
+  const email = $("#email").value.trim(), password = $("#password").value;
+  if (!email || password.length < 6) return setMsg("loginMsg", "Type your email and a password (6 or more characters) first.", "bad");
+  const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) return setMsg("loginMsg", error.message, "bad");
+  if (data.session) return start(data.session);
+  setMsg("loginMsg", "Account made. Open the email we sent to confirm it, then log in.", "ok");
+});
+$("#logoutBtn").addEventListener("click", () => db.auth.signOut());
+function setMsg(id, text, kind = "") { const el = $("#" + id); el.textContent = text; el.className = "msg " + kind; }
+
+async function start(session) {
+  state.me = session.user;
+  $("#login").hidden = true; $("#app").hidden = false;
+  const { data: prof } = await db.from("profiles").select("*").eq("user_id", session.user.id).maybeSingle();
+  state.dev = prof?.role === "developer";
+  $("#who").textContent = (session.user.email || "") + (state.dev ? " · developer" : "");
+  document.querySelectorAll(".tab.dev").forEach(t => t.hidden = !state.dev);
+  $("#unbindHint").textContent = state.dev
+    ? "Approve after you unbind the key in Firebase (deviceId cleared). The unit locks itself on its next online check."
+    : "Ask the developer to unbind a license (for example when moving it to a new coin slot).";
+  await loadAll();
+}
+
+// ───── Tabs ─────
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  ["units", "clients", "accounts", "unbind"].forEach(n => $("#tab-" + n).hidden = n !== t.dataset.tab);
+  if (t.dataset.tab === "clients") renderClients();
+  if (t.dataset.tab === "accounts") renderAccounts();
+  if (t.dataset.tab === "unbind") renderUnbind();
+}));
+
+// ───── Data ─────
+async function loadAll() {
+  const [u, c, p] = await Promise.all([
+    db.from("unit_overview").select("*").order("created_at"),
+    db.from("clients").select("*").order("name"),
+    state.dev ? db.from("profiles").select("*").order("created_at") : Promise.resolve({ data: [] })
+  ]);
+  if (u.error) { $("#units").innerHTML = `<div class="empty">Couldn't load units: ${esc(u.error.message)}</div>`; return; }
+  state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || [];
+  $("#updated").textContent = "Updated " + new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+  renderUnits();
+}
+$("#refreshBtn").addEventListener("click", loadAll);
+$("#search").addEventListener("input", renderUnits);
+$("#filter").addEventListener("change", renderUnits);
+setInterval(() => { if (state.me && !document.hidden) loadAll(); }, 5 * 60 * 1000);
+
+const clientName = id => state.clients.find(c => c.id === id)?.name || "";
+const unitName = u => u.name || u.status?.name || u.device_id;
+
+/** What needs attention on one unit, worst first. */
+function issues(u) {
+  const s = u.status || {}, out = [];
+  if (!u.online) out.push({ kind: "bad", text: "Offline · last report " + ago(u.last_seen) });
+  for (const k of ["printerColor", "printerBw"]) {
+    const p = s[k];
+    if (p && !p.ok) out.push({ kind: "bad", text: (k === "printerBw" ? "B&W printer: " : "Printer: ") + p.detail });
+    else if (p?.warning) out.push({ kind: "warn", text: p.warning });
+  }
+  if (s.paper !== undefined && s.paper <= 0) out.push({ kind: "bad", text: "Out of paper" });
+  else if (s.paper !== undefined && s.paper <= (s.paperLowAt ?? 20)) out.push({ kind: "warn", text: `Paper low · ${s.paper} sheets` });
+  if (s.coinSlot === "offline") out.push({ kind: "bad", text: "Coin slot not connected" });
+  if (s.license && !["Active", "NotSetUp"].includes(s.license)) out.push({ kind: "bad", text: "License: " + s.license });
+  if (s.serviceWarnAt > 0 && s.pagesSinceService >= s.serviceWarnAt) out.push({ kind: "warn", text: `Ink pad counter ${s.pagesSinceService} pages · reset soon` });
+  return out;
+}
+
+function renderUnits() {
+  const q = $("#search").value.trim().toLowerCase(), f = $("#filter").value;
+  const all = state.units;
+  const online = all.filter(u => u.online).length;
+  const problems = all.filter(u => issues(u).some(i => i.kind === "bad")).length;
+  const today = all.reduce((t, u) => t + Number(u.status?.today?.total || 0), 0);
+  $("#summary").innerHTML = `
+    <div class="stat"><span>Units</span><b>${all.length}</b></div>
+    <div class="stat"><span>Online</span><b style="color:var(--ok)">${online}</b></div>
+    <div class="stat"><span>Need attention</span><b style="color:${problems ? "var(--bad)" : "var(--ink)"}">${problems}</b></div>
+    <div class="stat"><span>Sales today</span><b>${pesoN(today)}</b></div>`;
+
+  const list = all.filter(u => {
+    const hay = [unitName(u), u.device_id, clientName(u.client_id), u.location].join(" ").toLowerCase();
+    if (q && !hay.includes(q)) return false;
+    if (f === "offline") return !u.online;
+    if (f === "problem") return issues(u).length > 0;
+    return true;
+  });
+
+  if (!all.length) {
+    $("#units").innerHTML = `<div class="empty" style="grid-column:1/-1">${state.dev
+      ? "No units yet. A unit appears here a minute after EzPrint starts with an activated license."
+      : "No units linked to your account yet. Ask the developer to link your account to your shop."}</div>`;
+    return;
+  }
+  if (!list.length) { $("#units").innerHTML = `<div class="empty" style="grid-column:1/-1">No units match.</div>`; return; }
+
+  $("#units").innerHTML = list.map(u => {
+    const s = u.status || {}, iss = issues(u), bad = iss.some(i => i.kind === "bad");
+    const pill = !u.online ? `<span class="pill off">Offline</span>` : bad ? `<span class="pill bad">Problem</span>`
+      : iss.length ? `<span class="pill warn">Check</span>` : `<span class="pill ok">Online</span>`;
+    const first = iss[0];
+    return `<button class="card ${!u.online ? "offline" : bad ? "problem" : ""}" data-unit="${esc(u.id)}">
+      <div class="card-head">
+        <div><h3>${esc(unitName(u))}</h3>
+          <div class="sub">${esc([clientName(u.client_id), u.location].filter(Boolean).join(" · ") || "No client yet")}</div></div>
+        ${pill}
+      </div>
+      <div class="facts">
+        <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
+        <div class="fact"><small>Paper</small><b>${s.paper ?? "—"}</b></div>
+        <div class="fact"><small>Seen</small><b style="font-size:14px">${esc(ago(u.last_seen))}</b></div>
+      </div>
+      ${first ? `<div class="alert ${first.kind === "warn" ? "warn" : ""}">${esc(first.text)}${iss.length > 1 ? ` · +${iss.length - 1} more` : ""}</div>` : ""}
+      <div class="muted mono">${esc(u.device_id)} · v${esc(u.app_version || "?")}</div>
+    </button>`;
+  }).join("");
+  document.querySelectorAll("[data-unit]").forEach(c => c.addEventListener("click", () => openUnit(c.dataset.unit)));
+}
+
+// ───── Unit sheet ─────
+function closeSheet() { $("#sheet").hidden = true; $("#sheetBg").hidden = true; }
+$("#sheetBg").addEventListener("click", closeSheet);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+async function openUnit(id) {
+  const u = state.units.find(x => x.id === id); if (!u) return;
+  const s = u.status || {};
+  const sheet = $("#sheet");
+  sheet.hidden = false; $("#sheetBg").hidden = false;
+  sheet.innerHTML = `<div class="sheet-head"><div><h2>${esc(unitName(u))}</h2><div class="muted mono">${esc(u.device_id)}</div></div>
+    <button class="btn" id="closeSheet">Close</button></div><div class="panel muted">Loading…</div>`;
+  $("#closeSheet").onclick = closeSheet;
+
+  const since = new Date(Date.now() - 14 * 86400000).toISOString();
+  const [sales, errs, unb] = await Promise.all([
+    db.from("sales").select("*").eq("unit_id", id).gte("at", since).order("at", { ascending: false }).limit(1000),
+    db.from("unit_errors").select("*").eq("unit_id", id).order("at", { ascending: false }).limit(50),
+    db.from("unbind_requests").select("*").eq("unit_id", id).order("created_at", { ascending: false }).limit(5)
+  ]);
+  const rows = sales.data || [];
+
+  // last 14 days, money kept per day
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push({ d, c: 0 }); }
+  rows.forEach(r => { const t = new Date(r.at); const day = days.find(x => t >= x.d && t < new Date(x.d.getTime() + 86400000)); if (day) day.c += r.paid_c || 0; });
+  const max = Math.max(1, ...days.map(x => x.c));
+  const total14 = days.reduce((t, x) => t + x.c, 0);
+
+  const printers = ["printerColor", "printerBw"].filter(k => s[k]).map(k => {
+    const p = s[k];
+    return `<tr><td>${k === "printerBw" ? "B&W" : "Colored"}</td><td>${esc(p.name)}</td>
+      <td>${p.ok ? `<span class="pill ok">Ready</span>` : `<span class="pill bad">${esc(p.detail)}</span>`}</td><td>${esc(p.warning || "")}</td></tr>`;
+  }).join("");
+  const iss = issues(u);
+  const pending = (unb.data || []).find(r => r.status === "pending");
+
+  sheet.innerHTML = `
+    <div class="sheet-head"><div><h2>${esc(unitName(u))}</h2>
+      <div class="muted mono">${esc(u.device_id)} · v${esc(u.app_version || "?")}${u.firmware_version ? " · coin slot fw " + esc(u.firmware_version) : ""}</div></div>
+      <button class="btn" id="closeSheet">Close</button></div>
+
+    <div class="panel">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        ${u.online ? `<span class="pill ok">Online</span>` : `<span class="pill off">Offline</span>`}
+        <span class="muted">Last report ${esc(dt(u.last_seen))} (${esc(ago(u.last_seen))}) · reports every ${u.effective_report_minutes} min</span>
+      </div>
+      ${iss.length ? iss.map(i => `<div class="alert ${i.kind === "warn" ? "warn" : ""}">${esc(i.text)}</div>`).join("") : `<div class="muted">Everything looks fine.</div>`}
+      <div class="facts">
+        <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
+        <div class="fact"><small>Jobs today</small><b>${s.today?.jobs ?? "—"}</b></div>
+        <div class="fact"><small>Pages today</small><b>${s.today?.pages ?? "—"}</b></div>
+        <div class="fact"><small>Paper left</small><b>${s.paper ?? "—"}</b></div>
+        <div class="fact"><small>Ink pad counter</small><b>${s.pagesSinceService ?? "—"}</b></div>
+        <div class="fact"><small>Coin slot</small><b style="font-size:14px">${esc(s.coinSlot || "—")}</b></div>
+      </div>
+      ${printers ? `<div class="table-wrap"><table><tr><th>Printer</th><th>Name</th><th>Status</th><th>Note</th></tr>${printers}</table></div>` : ""}
+    </div>
+
+    <div class="panel">
+      <h3>Last 14 days · ${peso(total14)}</h3>
+      <div class="bars" role="img" aria-label="Money kept per day, last 14 days">
+        ${days.map(x => `<div class="${x.c ? "" : "zero"}" style="height:${(x.c / max * 100).toFixed(1)}%" title="${x.d.toLocaleDateString("en-PH", { month: "short", day: "numeric" })}: ${peso(x.c)}"></div>`).join("")}
+      </div>
+      <div class="bar-labels">${days.map((x, i) => `<span>${i % 2 ? "" : x.d.getDate()}</span>`).join("")}</div>
+    </div>
+
+    <div class="panel"><h3>Sales</h3>
+      ${rows.length ? `<div class="table-wrap"><table>
+        <tr><th>When</th><th>Sale</th><th class="r">Pages</th><th>Status</th><th class="r">Price</th><th class="r">Kept</th><th class="r">Sukli</th></tr>
+        ${rows.slice(0, 100).map(r => `<tr><td>${esc(dt(r.at))}</td><td class="mono">${esc(r.sale_id)}</td><td class="r">${r.pages ?? ""}${r.color ? " · color" : ""}</td>
+          <td>${esc(r.status)}</td><td class="r">${peso(r.price_c)}</td><td class="r">${peso(r.paid_c)}</td><td class="r">${r.change_c ? peso(r.change_c) : ""}</td></tr>`).join("")}
+      </table></div>` : `<div class="muted">No sales in the last 14 days.</div>`}
+    </div>
+
+    <div class="panel"><h3>Problems the app logged</h3>
+      ${(errs.data || []).length ? `<div class="table-wrap"><table><tr><th>When</th><th>Where</th><th>What</th></tr>
+        ${errs.data.map(e => `<tr><td>${esc(dt(e.at))}</td><td>${esc(e.kind)}</td><td class="wrap-text">${esc(e.message)}</td></tr>`).join("")}</table></div>`
+        : `<div class="muted">Nothing logged.</div>`}
+    </div>
+
+    ${state.dev ? `
+    <form class="panel" id="unitForm">
+      <h3>Unit settings</h3>
+      <div class="form-row">
+        <label>Name <input id="uName" value="${esc(u.name || "")}" placeholder="${esc(s.name || "")}"></label>
+        <label>Location <input id="uLoc" value="${esc(u.location || "")}" placeholder="Brgy., city"></label>
+        <label>Client <select id="uClient"><option value="">No client</option>
+          ${state.clients.map(c => `<option value="${c.id}" ${c.id === u.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
+        <label>Report every (minutes, empty = default) <input id="uMin" type="number" min="5" max="1440" value="${u.report_minutes ?? ""}"></label>
+      </div>
+      <div class="muted">License key: <span class="mono">${esc(u.license_key || "—")}</span></div>
+      <div><button class="btn primary" type="submit">Save</button> <span class="msg" id="unitMsg"></span></div>
+    </form>` : `
+    <div class="panel"><h3>License</h3>
+      ${pending ? `<div class="alert warn">Unbind requested ${esc(dt(pending.created_at))}. Waiting for the developer.</div>`
+        : `<label>Reason <input id="ubReason" placeholder="e.g. moving the license to a new coin slot"></label>
+           <div><button class="btn" id="ubBtn">Request unbind</button> <span class="msg" id="ubMsg"></span></div>`}
+    </div>`}
+  `;
+  $("#closeSheet").onclick = closeSheet;
+
+  if (state.dev) {
+    $("#unitForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const min = $("#uMin").value.trim();
+      const { error } = await db.from("units").update({
+        name: $("#uName").value.trim() || null, location: $("#uLoc").value.trim() || null,
+        client_id: $("#uClient").value || null, report_minutes: min ? Number(min) : null
+      }).eq("id", id);
+      setMsg("unitMsg", error ? error.message : "Saved.", error ? "bad" : "ok");
+      if (!error) { await loadAll(); }
+    });
+  } else if (!pending) {
+    $("#ubBtn").addEventListener("click", async () => {
+      const { error } = await db.from("unbind_requests").insert({ unit_id: id, requested_by: state.me.id, reason: $("#ubReason").value.trim() || null });
+      setMsg("ubMsg", error ? error.message : "Sent. The developer will check it.", error ? "bad" : "ok");
+    });
+  }
+}
+
+// ───── Clients ─────
+function renderClients() {
+  const count = id => state.units.filter(u => u.client_id === id).length;
+  $("#clientsTable").innerHTML = `<tr><th>Name</th><th>Phone</th><th class="r">Units</th><th>Added</th></tr>` +
+    (state.clients.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.phone || "")}</td><td class="r">${count(c.id)}</td><td>${esc(dt(c.created_at))}</td></tr>`).join("")
+      || `<tr><td colspan="4" class="muted">No clients yet.</td></tr>`);
+}
+$("#clientForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { error } = await db.from("clients").insert({ name: $("#cName").value.trim(), phone: $("#cPhone").value.trim() || null });
+  setMsg("clientMsg", error ? error.message : "Added.", error ? "bad" : "ok");
+  if (!error) { $("#cName").value = ""; $("#cPhone").value = ""; await loadAll(); renderClients(); }
+});
+
+// ───── Accounts ─────
+function renderAccounts() {
+  $("#accountsTable").innerHTML = `<tr><th>Account</th><th>Role</th><th>Client</th><th></th></tr>` +
+    state.profiles.map(p => `<tr><td>${esc(p.display_name || p.user_id)}</td><td>${esc(p.role)}</td>
+      <td><select data-acc="${p.user_id}" ${p.role === "developer" ? "disabled" : ""}><option value="">None (sees nothing)</option>
+        ${state.clients.map(c => `<option value="${c.id}" ${c.id === p.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></td>
+      <td><span class="msg" id="acc-${p.user_id}"></span></td></tr>`).join("");
+  document.querySelectorAll("[data-acc]").forEach(sel => sel.addEventListener("change", async () => {
+    const { error } = await db.from("profiles").update({ client_id: sel.value || null }).eq("user_id", sel.dataset.acc);
+    setMsg("acc-" + sel.dataset.acc, error ? error.message : "Saved", error ? "bad" : "ok");
+    if (!error) { const p = state.profiles.find(x => x.user_id === sel.dataset.acc); if (p) p.client_id = sel.value || null; }
+  }));
+}
+
+// ───── Unbind requests ─────
+async function renderUnbind() {
+  const { data, error } = await db.from("unbind_requests").select("*").order("created_at", { ascending: false }).limit(100);
+  if (error) { $("#unbindTable").innerHTML = `<tr><td>${esc(error.message)}</td></tr>`; return; }
+  const name = id => { const u = state.units.find(x => x.id === id); return u ? unitName(u) + " · " + u.device_id : id; };
+  $("#unbindTable").innerHTML = `<tr><th>When</th><th>Unit</th><th>Reason</th><th>Status</th>${state.dev ? "<th></th>" : ""}</tr>` +
+    ((data || []).map(r => `<tr><td>${esc(dt(r.created_at))}</td><td>${esc(name(r.unit_id))}</td><td class="wrap-text">${esc(r.reason || "")}</td>
+      <td><span class="pill ${r.status === "pending" ? "warn" : r.status === "rejected" ? "bad" : "ok"}">${esc(r.status)}</span></td>
+      ${state.dev ? `<td>${r.status === "pending" ? `<button class="btn" data-ub="${r.id}" data-st="done">Done (unbound)</button> <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>` : ""}</td>` : ""}</tr>`).join("")
+      || `<tr><td colspan="5" class="muted">No requests.</td></tr>`);
+  document.querySelectorAll("[data-ub]").forEach(b => b.addEventListener("click", async () => {
+    b.disabled = true;
+    const { error } = await db.from("unbind_requests").update({ status: b.dataset.st, decided_at: new Date().toISOString(), decided_by: state.me.id }).eq("id", b.dataset.ub);
+    if (error) { b.disabled = false; b.textContent = error.message; } else renderUnbind();
+  }));
+}
+
+boot();
+</script>
+</body>
+</html>
