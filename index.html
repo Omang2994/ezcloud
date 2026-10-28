@@ -61,6 +61,12 @@ label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(-
 .login-box { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: grid; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 20px; color: var(--accent); }
 .brand i { width: 30px; height: 30px; border-radius: 9px; background: var(--logo-bg); display: grid; place-items: center; color: var(--logo-fg); font-weight: 700; font-style: normal; font-size: 15px; }
+.pw { position: relative; }
+.pw input { padding-right: 46px; }
+.pw button { position: absolute; right: 4px; bottom: 4px; height: 36px; width: 38px; border: 0; background: transparent; cursor: pointer; color: var(--muted); border-radius: 8px; display: grid; place-items: center; }
+.pw button:hover { color: var(--ink); }
+.pw button:focus-visible { outline: 3px solid var(--accent); }
+.link { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; justify-self: start; }
 .msg { min-height: 22px; font-weight: 600; font-size: 14px; }
 .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
 
@@ -141,10 +147,18 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <div class="brand"><i>Ez</i>EzCloud</div>
     <p class="muted" style="margin:0">Your EzPrint units: online or offline, paper, printer and sales.</p>
     <label>Email <input id="email" type="email" autocomplete="email" required></label>
-    <label>Password <input id="password" type="password" autocomplete="current-password" required minlength="6"></label>
+    <label>Password <span class="pw"><input id="password" type="password" autocomplete="current-password" required minlength="6"><button type="button" class="eye" aria-label="Show password"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+    <button class="link" id="forgotBtn" type="button">Forgot password?</button>
     <div class="msg" id="loginMsg"></div>
     <button class="btn primary" id="loginBtn" type="submit">Log in</button>
     <button class="btn" id="signupBtn" type="button">Create account</button>
+  </form>
+  <form class="login-box" id="newPwForm" hidden>
+    <div class="brand"><i>Ez</i>EzCloud</div>
+    <h2 style="font-size:20px">Set a new password</h2>
+    <label>New password <span class="pw"><input id="newPassword" type="password" autocomplete="new-password" required minlength="6"><button type="button" class="eye" aria-label="Show password"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+    <div class="msg" id="newPwMsg"></div>
+    <button class="btn primary" type="submit">Save new password</button>
   </form>
 </section>
 
@@ -243,14 +257,17 @@ function ago(s) {
 }
 
 const state = { me: null, dev: false, units: [], clients: [], profiles: [] };
+let recovering = location.hash.includes("type=recovery");   // opened from the reset email
 
 // ───── Login ─────
 async function boot() {
   const { data: { session } } = await db.auth.getSession();
-  session ? start(session) : showLogin();
+  if (recovering) { $("#login").hidden = false; $("#loginForm").hidden = true; $("#newPwForm").hidden = false; }
+  else session ? start(session) : showLogin();
   db.auth.onAuthStateChange((ev, s) => {
     if (ev === "SIGNED_OUT") showLogin();
-    if (ev === "SIGNED_IN" && s && !state.me) start(s);
+    if (ev === "PASSWORD_RECOVERY") { recovering = true; $("#app").hidden = true; $("#login").hidden = false; $("#loginForm").hidden = true; $("#newPwForm").hidden = false; return; }
+    if (ev === "SIGNED_IN" && s && !state.me && !recovering) start(s);
   });
 }
 function showLogin() { state.me = null; $("#app").hidden = true; $("#login").hidden = false; }
@@ -272,6 +289,33 @@ $("#signupBtn").addEventListener("click", async () => {
   setMsg("loginMsg", "Account made. Open the email we sent to confirm it, then log in.", "ok");
 });
 $("#logoutBtn").addEventListener("click", () => db.auth.signOut());
+
+// Show / hide password (the eye)
+document.querySelectorAll(".pw .eye").forEach(b => b.addEventListener("click", () => {
+  const input = b.parentElement.querySelector("input");
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+  b.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  b.style.color = show ? "var(--accent)" : "";
+}));
+
+// Forgot password: email with a link back here, then a form for the new password
+$("#forgotBtn").addEventListener("click", async () => {
+  const email = $("#email").value.trim();
+  if (!email) return setMsg("loginMsg", "Type your email first, then tap Forgot password.", "bad");
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  setMsg("loginMsg", error ? error.message : "Check your email for the reset link (look in Spam too).", error ? "bad" : "ok");
+});
+$("#newPwForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { error } = await db.auth.updateUser({ password: $("#newPassword").value });
+  if (error) return setMsg("newPwMsg", error.message, "bad");
+  recovering = false;
+  $("#newPwForm").hidden = true; $("#loginForm").hidden = false;
+  history.replaceState(null, "", location.pathname);
+  const { data: { session } } = await db.auth.getSession();
+  session ? start(session) : setMsg("loginMsg", "Password saved. Log in with it now.", "ok");
+});
 function setMsg(id, text, kind = "") { const el = $("#" + id); el.textContent = text; el.className = "msg " + kind; }
 
 async function start(session) {
