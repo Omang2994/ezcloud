@@ -668,6 +668,7 @@ async function openUnit(id) {
   const u = state.units.find(x => x.id === id); if (!u) return;
   const s = u.status || {};
   const sheet = $("#sheet");
+  sheet.dataset.unit = id;
   sheet.hidden = false; $("#sheetBg").hidden = false;
   sheet.innerHTML = `<div class="sheet-head"><div><h2>${esc(unitName(u))}</h2><div class="muted mono">${esc(u.device_id)}</div></div>
     <button class="btn" id="closeSheet">Close</button></div><div class="panel muted">Loading…</div>`;
@@ -937,8 +938,10 @@ async function watchPing(id) {
         const { data } = await db.from("unit_overview").select("ping_answered_at,last_seen").eq("id", id).maybeSingle();
         if (data?.ping_answered_at && new Date(data.ping_answered_at) >= p.at) {
           p.done = true; const s = Math.round((new Date(data.ping_answered_at) - p.at) / 1000);
-          showPing(id, `Online · answered in ${s < 90 ? s + " seconds" : Math.round(s / 60) + " minutes"}.`, "ok");
-          loadAll();
+          await loadAll();
+          // Show the fresh report (printer, paper, coin slot) in the open unit
+          if (!$("#sheet").hidden && $("#sheet").dataset.unit === id) await openUnit(id);
+          showPing(id, `Online · answered in ${s < 90 ? s + " seconds" : Math.round(s / 60) + " minutes"}. Status below is new.`, "ok");
         } else if (Date.now() > p.deadline) {
           p.done = true; showPing(id, "No answer. The machine is offline (or off, or without internet).", "bad");
         } else {
