@@ -728,7 +728,12 @@ async function openUnit(id) {
       </table></div>` : `<div class="muted">No sales in the last 14 days.</div>`}
     </div>
 
-    <div class="panel"><h3>Problems the app logged</h3>
+    <div class="panel">
+      <div style="display:flex;align-items:center;gap:8px">
+        <h3 style="flex:1">Problems the app logged <span class="muted" style="font-weight:400">· last 7 days</span></h3>
+        ${(errs.data || []).length ? `<button class="btn" id="clrErr" type="button">Clear</button>
+          <button class="btn danger" id="clrErrSure" type="button" hidden>Yes, clear ${errs.data.length}</button>` : ""}
+      </div>
       ${(errs.data || []).length ? `<div class="table-wrap"><table><tr><th>When</th><th>Where</th><th>What</th></tr>
         ${errs.data.map(e => `<tr><td>${esc(dt(e.at))}</td><td>${esc(e.kind)}</td><td class="wrap-text">${esc(e.message)}</td></tr>`).join("")}</table></div>`
         : `<div class="muted">Nothing logged.</div>`}
@@ -759,6 +764,13 @@ async function openUnit(id) {
   `;
   $("#closeSheet").onclick = closeSheet;
   $("#pingBtn").addEventListener("click", () => ping(id));
+  $("#clrErr")?.addEventListener("click", () => { $("#clrErr").hidden = true; $("#clrErrSure").hidden = false; });
+  $("#clrErrSure")?.addEventListener("click", async () => {
+    $("#clrErrSure").disabled = true;
+    const { data, error } = await db.rpc("clear_unit_errors", { p_unit: id });
+    if (error || !data?.ok) { $("#clrErrSure").disabled = false; $("#clrErrSure").textContent = error?.message || "Couldn't clear"; return; }
+    openUnit(id);
+  });
   resumePing(id);
 
   if (state.dev) {
