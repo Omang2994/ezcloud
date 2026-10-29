@@ -946,7 +946,10 @@ $("#addUnitForm").addEventListener("submit", async e => {
   setMsg("addMsg", "Checking…");
   const code = $("#addCode").value.trim();
   if (code.replace(/[^A-Za-z0-9]/g, "").length !== 8) return setMsg("addMsg", "Type the 8-character EzSoft code from the machine (Admin › License).", "bad");
-  const { data, error } = await db.rpc("claim_unit", { p_key: key, p_code: code });
+  const btn = $("#addUnitForm button[type=submit]");
+  if (btn.disabled) return;
+  btn.disabled = true;   // one try per tap (tries are limited per hour)
+  const { data, error } = await db.rpc("claim_unit", { p_key: key, p_code: code }).finally(() => { btn.disabled = false; });
   if (error) return setMsg("addMsg", error.message, "bad");
   const why = { not_found: "No machine with that key yet. Turn the machine on with internet, wait 2 minutes, then try again.",
     taken: "That machine is linked to another account. Contact the developer.", too_many: "Too many tries. Wait an hour and try again.",
