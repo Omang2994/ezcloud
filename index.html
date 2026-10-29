@@ -354,7 +354,7 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     <!-- Accounts (developer) -->
     <section id="tab-accounts" hidden style="display:grid;gap:16px">
       <div class="panel">
-        <p class="muted" style="margin:0">A new account sees nothing until you link it to a client here.</p>
+        <p class="muted" style="margin:0">A new account sees nothing until it has a shop. Add a license here, or the owner adds it with the EzSoft code from the machine. Deleting a login keeps the shop, units and sales.</p>
         <div class="table-wrap"><table id="accountsTable"></table></div>
       </div>
     </section>
@@ -790,11 +790,46 @@ async function openUnit(id) {
 }
 
 // ───── Clients ─────
+// Two-step buttons: first tap shows "Yes, …", second tap does it.
+function confirmStep(btn, label) {
+  if (btn.dataset.armed === "1") return true;
+  btn.dataset.armed = "1"; btn.dataset.label = btn.textContent; btn.textContent = label; btn.classList.add("danger");
+  setTimeout(() => { if (btn.isConnected && btn.dataset.armed === "1") { btn.dataset.armed = ""; btn.textContent = btn.dataset.label; btn.classList.remove("danger"); } }, 6000);
+  return false;
+}
+const accountsOf = id => state.profiles.filter(p => p.client_id === id);
 function renderClients() {
-  const count = id => state.units.filter(u => u.client_id === id).length;
-  $("#clientsTable").innerHTML = `<tr><th>Name</th><th>Phone</th><th class="r">Units</th><th>Added</th></tr>` +
-    (state.clients.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.phone || "")}</td><td class="r">${count(c.id)}</td><td>${esc(dt(c.created_at))}</td></tr>`).join("")
-      || `<tr><td colspan="4" class="muted">No clients yet.</td></tr>`);
+  const units = id => state.units.filter(u => u.client_id === id);
+  $("#clientsTable").innerHTML = `<tr><th>Shop</th><th>Phone</th><th>Accounts</th><th class="r">Units</th><th></th></tr>` +
+    (state.clients.map(c => `<tr data-client="${c.id}">
+      <td><span class="v-name">${esc(c.name)}</span><input class="e-name" value="${esc(c.name)}" hidden></td>
+      <td><span class="v-phone">${esc(c.phone || "—")}</span><input class="e-phone" value="${esc(c.phone || "")}" hidden></td>
+      <td class="wrap-text" style="min-width:160px">${accountsOf(c.id).map(p => esc(p.display_name || "")).join("<br>") || `<span class="muted">none</span>`}</td>
+      <td class="r">${units(c.id).length}</td>
+      <td><div class="act"><button class="btn" data-cedit>Edit</button><button class="btn primary" data-csave hidden>Save</button>
+        <button class="btn" data-cdel>Delete</button></div><div class="msg"></div></td></tr>`).join("")
+      || `<tr><td colspan="5" class="muted">No clients yet.</td></tr>`);
+  document.querySelectorAll("[data-client]").forEach(row => {
+    const id = row.dataset.client, msg = row.querySelector(".msg");
+    row.querySelector("[data-cedit]").addEventListener("click", e => {
+      row.querySelectorAll(".v-name,.v-phone").forEach(x => x.hidden = true);
+      row.querySelectorAll(".e-name,.e-phone").forEach(x => x.hidden = false);
+      e.target.hidden = true; row.querySelector("[data-csave]").hidden = false;
+    });
+    row.querySelector("[data-csave]").addEventListener("click", async () => {
+      const name = row.querySelector(".e-name").value.trim();
+      if (!name) { msg.textContent = "Type a name."; msg.className = "msg bad"; return; }
+      const { error } = await db.from("clients").update({ name, phone: row.querySelector(".e-phone").value.trim() || null }).eq("id", id);
+      if (error) { msg.textContent = error.message; msg.className = "msg bad"; return; }
+      await loadAll(); renderClients();
+    });
+    row.querySelector("[data-cdel]").addEventListener("click", async e => {
+      if (!confirmStep(e.target, "Yes, delete shop")) return;
+      const { error } = await db.from("clients").delete().eq("id", id);
+      if (error) { msg.textContent = error.message; msg.className = "msg bad"; return; }
+      await loadAll(); renderClients();
+    });
+  });
 }
 $("#clientForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -804,17 +839,65 @@ $("#clientForm").addEventListener("submit", async e => {
 });
 
 // ───── Accounts ─────
+const ACC_WHY = { not_found: "No machine with that key yet (it must be activated and online once).", no_account: "Account not found.",
+  self: "You can't delete your own account.", developer: "Developer accounts can't be deleted here.", not_developer: "Developer only." };
 function renderAccounts() {
-  $("#accountsTable").innerHTML = `<tr><th>Account</th><th>Role</th><th>Client</th><th></th></tr>` +
-    state.profiles.map(p => `<tr><td>${esc(p.display_name || p.user_id)}</td><td>${esc(p.role)}</td>
-      <td><select data-acc="${p.user_id}" ${p.role === "developer" ? "disabled" : ""}><option value="">None (sees nothing)</option>
-        ${state.clients.map(c => `<option value="${c.id}" ${c.id === p.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></td>
-      <td><span class="msg" id="acc-${p.user_id}"></span></td></tr>`).join("");
-  document.querySelectorAll("[data-acc]").forEach(sel => sel.addEventListener("change", async () => {
-    const { error } = await db.from("profiles").update({ client_id: sel.value || null }).eq("user_id", sel.dataset.acc);
-    setMsg("acc-" + sel.dataset.acc, error ? error.message : "Saved", error ? "bad" : "ok");
-    if (!error) { const p = state.profiles.find(x => x.user_id === sel.dataset.acc); if (p) p.client_id = sel.value || null; }
-  }));
+  $("#accountsTable").innerHTML = `<tr><th>Account</th><th>Shop</th><th>Licenses</th><th></th></tr>` +
+    state.profiles.map(p => {
+      const dev = p.role === "developer";
+      const units = p.client_id ? state.units.filter(u => u.client_id === p.client_id) : [];
+      return `<tr data-acc="${p.user_id}">
+      <td>${esc(p.display_name || p.user_id)}${dev ? ` <span class="pill ok">developer</span>` : ""}</td>
+      <td style="min-width:180px">${dev ? `<span class="muted">sees everything</span>` : `<select data-shop><option value="">None (sees nothing)</option>
+        ${state.clients.map(c => `<option value="${c.id}" ${c.id === p.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>`}</td>
+      <td style="white-space:normal;min-width:230px">${dev ? "" : (units.map(u => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+          <span class="mono" style="font-size:13px;white-space:nowrap">••••${esc((u.license_key || "").slice(-4))}</span><span class="muted" style="font-size:13px;white-space:nowrap">${esc(unitName(u))}</span>
+          <button class="btn" data-unlink="${u.id}" style="padding:2px 8px;font-size:13px">Remove</button></div>`).join("") || `<span class="muted">none</span>`)}</td>
+      <td style="min-width:240px">${dev ? "" : `<div class="act">
+          <input data-key placeholder="License key" style="max-width:150px;font-family:var(--f-mono);padding:6px 8px;font-size:13px" autocomplete="off">
+          <button class="btn primary" data-assign>Add license</button></div>
+        <div class="act"><button class="btn" data-noaccess ${p.client_id ? "" : "disabled"}>Remove access</button>
+          <button class="btn" data-delacc>Delete account</button></div>`}<div class="msg"></div></td></tr>`;
+    }).join("");
+  document.querySelectorAll("[data-acc]").forEach(row => {
+    const uid = row.dataset.acc, msg = row.querySelector(".msg");
+    const say = (t, k) => { msg.textContent = t; msg.className = "msg " + k; };
+    const refresh = async () => { await loadAll(); renderAccounts(); };
+    row.querySelector("[data-shop]")?.addEventListener("change", async e => {
+      const { error } = await db.from("profiles").update({ client_id: e.target.value || null }).eq("user_id", uid);
+      error ? say(error.message, "bad") : refresh();
+    });
+    row.querySelector("[data-assign]")?.addEventListener("click", async e => {
+      const key = row.querySelector("[data-key]").value.trim();
+      if (key.length < 6) return say("Type the whole license key.", "bad");
+      const move = e.target.dataset.move === "1";
+      e.target.disabled = true;
+      const { data, error } = await db.rpc("dev_assign_unit", { p_key: key, p_user: uid, p_move: move });
+      e.target.disabled = false;
+      if (error) return say(error.message, "bad");
+      if (!data.ok && data.reason === "linked") {
+        e.target.dataset.move = "1"; e.target.textContent = "Yes, move it"; e.target.classList.add("danger");
+        return say(`${data.unit} is in ${data.client || "another shop"}. Tap "Yes, move it" to move it here.`, "bad");
+      }
+      if (!data.ok) return say(ACC_WHY[data.reason] || data.reason, "bad");
+      refresh();
+    });
+    row.querySelectorAll("[data-unlink]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirmStep(b, "Yes, remove")) return;
+      const { data, error } = await db.rpc("dev_unlink_unit", { p_unit: b.dataset.unlink });
+      error || !data?.ok ? say(error?.message || "Failed", "bad") : refresh();
+    }));
+    row.querySelector("[data-noaccess]")?.addEventListener("click", async e => {
+      if (!confirmStep(e.target, "Yes, remove access")) return;
+      const { error } = await db.from("profiles").update({ client_id: null }).eq("user_id", uid);
+      error ? say(error.message, "bad") : refresh();
+    });
+    row.querySelector("[data-delacc]")?.addEventListener("click", async e => {
+      if (!confirmStep(e.target, "Yes, delete login")) return;
+      const { data, error } = await db.rpc("dev_delete_account", { p_user: uid });
+      error || !data?.ok ? say(error?.message || ACC_WHY[data.reason] || data.reason, "bad") : refresh();
+    });
+  });
 }
 
 // ───── Ping ─────
