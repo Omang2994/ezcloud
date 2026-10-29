@@ -512,11 +512,11 @@ function renderHome() {
     const list = state.units.filter(u => u.product === p.id);
     const online = list.filter(u => u.online).length;
     const bad = list.filter(u => issues(u).some(i => i.kind === "bad")).length;
-    const today = list.reduce((t, u) => t + Number(u.status?.today?.total || 0), 0);
+    const todayTotal = list.reduce((t, u) => t + today(u).total, 0);
     const body = p.ready
       ? `<div class="facts"><div class="fact"><small>Units</small><b>${list.length}</b></div>
            <div class="fact"><small>Online</small><b>${online}</b></div>
-           <div class="fact"><small>Today</small><b>${pesoN(today)}</b></div></div>
+           <div class="fact"><small>Today</small><b>${pesoN(todayTotal)}</b></div></div>
          ${bad ? `<div class="alert">${bad} need${bad === 1 ? "s" : ""} attention</div>` : ""}`
       : `<div class="muted">${esc(p.note)}</div>`;
     return `<button class="prod" data-prod="${p.id}" ${p.ready ? "" : "disabled"}>
@@ -574,9 +574,16 @@ const clientName = id => state.clients.find(c => c.id === id)?.name || "";
 const unitName = u => u.name || u.status?.name || u.device_id;
 
 /** What needs attention on one unit, worst first. */
+/** Sales "today" from the last report, only if that report was made today (else it was another day's). */
+function today(u) {
+  const s = u.status || {}, at = s.at ? new Date(s.at) : null;
+  const fresh = at && at.toDateString() === new Date().toDateString();
+  return fresh ? { total: Number(s.today?.total || 0), jobs: s.today?.jobs ?? 0, pages: s.today?.pages ?? 0 } : { total: 0, jobs: 0, pages: 0 };
+}
 function issues(u) {
   const s = u.status || {}, out = [];
-  if (!u.online) out.push({ kind: "bad", text: "Offline · last seen " + ago(u.last_contact) });
+  // Offline: the rest of the status is old (it may have been fixed since), so only say "offline".
+  if (!u.online) return [{ kind: "bad", text: "Offline · last seen " + ago(u.last_contact) }];
   for (const k of ["printerColor", "printerBw"]) {
     const p = s[k];
     if (p && !p.ok) out.push({ kind: "bad", text: (k === "printerBw" ? "B&W printer: " : "Printer: ") + p.detail });
@@ -595,12 +602,12 @@ function renderUnits() {
   const all = state.units.filter(u => u.product === "ezprint");
   const online = all.filter(u => u.online).length;
   const problems = all.filter(u => issues(u).some(i => i.kind === "bad")).length;
-  const today = all.reduce((t, u) => t + Number(u.status?.today?.total || 0), 0);
+  const todayTotal = all.reduce((t, u) => t + today(u).total, 0);
   $("#summary").innerHTML = `
     <div class="stat"><span>Units</span><b>${all.length}</b></div>
     <div class="stat"><span>Online</span><b style="color:var(--ok)">${online}</b></div>
     <div class="stat"><span>Need attention</span><b style="color:${problems ? "var(--bad)" : "var(--ink)"}">${problems}</b></div>
-    <div class="stat"><span>Sales today</span><b>${pesoN(today)}</b></div>`;
+    <div class="stat"><span>Sales today</span><b>${pesoN(todayTotal)}</b></div>`;
 
   const list = all.filter(u => {
     const hay = [unitName(u), u.device_id, clientName(u.client_id), u.location].join(" ").toLowerCase();
@@ -630,8 +637,8 @@ function renderUnits() {
         ${pill}
       </div>
       <div class="facts">
-        <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
-        <div class="fact"><small>Paper</small><b>${s.paper ?? "—"}</b></div>
+        <div class="fact"><small>Today</small><b>${pesoN(today(u).total)}</b></div>
+        <div class="fact"><small>${u.online ? "Paper" : "Paper (last)"}</small><b${u.online ? "" : ' class="muted"'}>${s.paper ?? "—"}</b></div>
         <div class="fact"><small>Seen</small><b style="font-size:14px">${esc(ago(u.last_contact))}</b></div>
       </div>
       ${first ? `<div class="alert ${first.kind === "warn" ? "warn" : ""}">${esc(first.text)}${iss.length > 1 ? ` · +${iss.length - 1} more` : ""}</div>` : ""}
@@ -673,9 +680,11 @@ async function openUnit(id) {
   const printers = ["printerColor", "printerBw"].filter(k => s[k]).map(k => {
     const p = s[k];
     return `<tr><td>${k === "printerBw" ? "B&W" : "Colored"}</td><td>${esc(p.name)}</td>
-      <td>${p.ok ? `<span class="pill ok">Ready</span>` : `<span class="pill bad">${esc(p.detail)}</span>`}</td><td>${esc(p.warning || "")}</td></tr>`;
+      <td>${!u.online ? `<span class="pill off">Unknown</span>` : p.ok ? `<span class="pill ok">Ready</span>` : `<span class="pill bad">${esc(p.detail)}</span>`}</td>
+      <td>${!u.online ? `<span class="muted">last known: ${esc(p.ok ? "Ready" : p.detail)}</span>` : esc(p.warning || "")}</td></tr>`;
   }).join("");
   const iss = issues(u);
+  const last = u.online ? "" : " (last known)";
 
   sheet.innerHTML = `
     <div class="sheet-head"><div><h2>${esc(unitName(u))}</h2>
@@ -692,13 +701,14 @@ async function openUnit(id) {
       <div class="msg" id="pingMsg" hidden></div>
       ${iss.length ? iss.map(i => `<div class="alert ${i.kind === "warn" ? "warn" : ""}">${esc(i.text)}</div>`).join("") : `<div class="muted">Everything looks fine.</div>`}
       <div class="facts">
-        <div class="fact"><small>Today</small><b>${pesoN(s.today?.total)}</b></div>
-        <div class="fact"><small>Jobs today</small><b>${s.today?.jobs ?? "—"}</b></div>
-        <div class="fact"><small>Pages today</small><b>${s.today?.pages ?? "—"}</b></div>
-        <div class="fact"><small>Paper left</small><b>${s.paper ?? "—"}</b></div>
-        <div class="fact"><small>Ink pad counter</small><b>${s.pagesSinceService ?? "—"}</b></div>
-        <div class="fact"><small>Coin slot</small><b style="font-size:14px">${esc(s.coinSlot || "—")}</b></div>
+        <div class="fact"><small>Today</small><b>${pesoN(today(u).total)}</b></div>
+        <div class="fact"><small>Jobs today</small><b>${today(u).jobs}</b></div>
+        <div class="fact"><small>Pages today</small><b>${today(u).pages}</b></div>
+        <div class="fact"><small>Paper left${last}</small><b>${s.paper ?? "—"}</b></div>
+        <div class="fact"><small>Ink pad counter${last}</small><b>${s.pagesSinceService ?? "—"}</b></div>
+        <div class="fact"><small>Coin slot${last}</small><b style="font-size:14px">${esc(u.online ? (s.coinSlot || "—") : "Unknown")}</b></div>
       </div>
+      ${u.online ? "" : `<div class="muted" style="font-size:13px">"Last known" = from the last report, ${esc(dt(s.at || u.last_seen))}. The machine is offline, so it may have changed.</div>`}
       ${printers ? `<div class="table-wrap"><table><tr><th>Printer</th><th>Name</th><th>Status</th><th>Note</th></tr>${printers}</table></div>` : ""}
     </div>
 
