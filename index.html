@@ -111,6 +111,10 @@ label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(-
 .dl-row small { display: block; color: var(--muted); font-size: 13px; }
 .dl-row .btn { text-align: center; text-decoration: none; font-size: 14px; padding: 7px 10px; }
 .dl-row a.btn { color: var(--on-accent); }
+.act { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+#licTable th, #licTable td { padding: 9px 8px; }
+#licTable .msg { overflow-wrap: anywhere; }
+.act .btn { padding: 5px 10px; font-size: 14px; }
 .dl-row .btn[aria-disabled="true"] { color: var(--muted); background: transparent; cursor: default; pointer-events: none; }
 
 /* product home (logged in) */
@@ -294,7 +298,6 @@ td.wrap-text { white-space: normal; min-width: 220px; }
       <button class="tab" role="tab" data-tab="licenses" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg><span>Licenses</span></button>
       <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="9" cy="8" r="4"/><path d="M17 11a3 3 0 1 0 0-6M21 21v-1a5 5 0 0 0-3-4.6"/></svg><span>Clients</span></button>
       <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3"/></svg><span>Accounts</span></button>
-      <button class="tab" role="tab" data-tab="unbind" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l-2 2a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M15 9l2-2a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0M3 3l18 18"/></svg><span>Unbind</span></button>
       <button class="tab" role="tab" data-tab="downloads" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg><span>Downloads</span></button>
     </nav>
     <div class="me"><span class="who" id="who"></span><button class="btn" id="logoutBtn">Log out</button></div>
@@ -371,12 +374,6 @@ td.wrap-text { white-space: normal; min-width: 220px; }
       <div class="panel"><div class="table-wrap"><table id="licTable"></table></div></div>
     </section>
 
-    <section id="tab-unbind" hidden style="display:grid;gap:16px">
-      <div class="panel">
-        <p class="muted" style="margin:0" id="unbindHint"></p>
-        <div class="table-wrap"><table id="unbindTable"></table></div>
-      </div>
-    </section>
    </div>
   </main>
 </div>
@@ -477,9 +474,6 @@ async function start(session) {
   state.dev = prof?.role === "developer";
   $("#who").textContent = (session.user.email || "") + (state.dev ? " · developer" : "");
   document.querySelectorAll(".tab.dev").forEach(t => t.hidden = !state.dev);
-  $("#unbindHint").textContent = state.dev
-    ? "Approve after you unbind the key in Firebase (deviceId cleared). The unit locks itself on its next online check."
-    : "Ask the developer to unbind a license (for example when moving it to a new coin slot).";
   await loadAll();
   // A client with units in one product only: straight to that product.
   const mine = new Set(state.units.map(u => u.product));
@@ -487,11 +481,11 @@ async function start(session) {
 }
 
 // ───── Tabs ─────
-const TABS = ["home", "units", "licenses", "clients", "accounts", "unbind", "downloads"];
+const TABS = ["home", "units", "licenses", "clients", "accounts", "downloads"];
 const HEADS = {
   home: ["Home", "Your EzSoft products."], units: ["EzPrint Pro", "Every EzPrint Pro machine, live."],
   clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Who can log in, and which shop they see."],
-  unbind: ["Unbind requests", "Moving a license to a new coin slot."], licenses: ["Licenses", "Every EzPrint Pro license and when it was last online."], downloads: ["Downloads", "Apps, installers and firmware."]
+  unbind: ["Unbind requests", "Moving a license to a new coin slot."], licenses: ["Licenses", "Every EzPrint Pro license, when it was last online, and unbind requests."], downloads: ["Downloads", "Apps, installers and firmware."]
 };
 function showTab(name) {
   document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
@@ -501,7 +495,6 @@ function showTab(name) {
   if (name === "home") renderHome();
   if (name === "clients") renderClients();
   if (name === "accounts") renderAccounts();
-  if (name === "unbind") renderUnbind();
   if (name === "licenses") renderLicenses();
   if (name === "downloads") renderDownloads($("#dlApp"));
 }
@@ -563,7 +556,7 @@ async function loadAll() {
     db.from("unit_overview").select("*").order("created_at"),
     db.from("clients").select("*").order("name"),
     state.dev ? db.from("profiles").select("*").order("created_at") : Promise.resolve({ data: [] }),
-    db.from("unbind_requests").select("unit_id,status,created_at,locked_at").order("created_at", { ascending: false }).limit(500)
+    db.from("unbind_requests").select("id,unit_id,status,created_at,locked_at,reason").order("created_at", { ascending: false }).limit(500)
   ]);
   if (u.error) { $("#units").innerHTML = `<div class="empty">Couldn't load units: ${esc(u.error.message)}</div>`; return; }
   state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || []; state.unbinds = ub.data || [];
@@ -683,7 +676,6 @@ async function openUnit(id) {
       <td>${p.ok ? `<span class="pill ok">Ready</span>` : `<span class="pill bad">${esc(p.detail)}</span>`}</td><td>${esc(p.warning || "")}</td></tr>`;
   }).join("");
   const iss = issues(u);
-  const open = (unb.data || []).find(r => r.status === "pending" || r.status === "locked");
 
   sheet.innerHTML = `
     <div class="sheet-head"><div><h2>${esc(unitName(u))}</h2>
@@ -747,13 +739,12 @@ async function openUnit(id) {
     </form>` : ""}
 
     <div class="panel"><h3>License</h3>
-      ${open && open.status === "pending" ? `<div class="alert warn">Unbind requested ${esc(dt(open.created_at))}. Waiting for the machine to lock itself (it checks every 5 minutes while online).</div>
-           <div><button class="btn" id="ubCancel" data-id="${open.id}">Cancel unbind</button> <span class="msg" id="ubMsg"></span></div>`
-      : open && open.status === "locked" ? `<div class="alert warn">The machine locked itself ${esc(dt(open.locked_at))}. ${state.dev ? "Clear deviceId of this key in Firebase, then mark it Done in Unbind." : "The developer will free the license key."}</div>`
-      : u.online ? `<p class="muted" style="margin:0">Unbinding locks this machine first, then frees the license key for another coin slot.</p>
-           <label>Reason <input id="ubReason" placeholder="e.g. moving the license to a new coin slot"></label>
-           <div><button class="btn" id="ubBtn">Unbind license</button> <button class="btn danger" id="ubSure" hidden>Yes, lock this machine</button> <span class="msg" id="ubMsg"></span></div>`
-      : `<div class="alert">This machine is offline. A license can only be unbound while the machine is online. ${state.dev ? "As the developer you can still unbind it in Firebase." : "Contact the developer."}</div>`}
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="mono">${esc(mask(u.license_key))}</span>
+        <span class="pill ${licenseState(u).cls}">${esc(licenseState(u).text)}</span>
+        <span style="flex:1"></span>
+        <button class="btn" id="toLicenses" type="button">Licenses &amp; unbind</button>
+      </div>
     </div>
   `;
   $("#closeSheet").onclick = closeSheet;
@@ -772,21 +763,7 @@ async function openUnit(id) {
       if (!error) { await loadAll(); }
     });
   }
-  const UB = { offline: "The machine is offline. Turn it on and connect it to the internet first.", open: "An unbind is already in progress.",
-    not_yours: "This unit is not in your account.", too_late: "The machine already locked itself." };
-  $("#ubBtn")?.addEventListener("click", () => { $("#ubBtn").hidden = true; $("#ubSure").hidden = false;
-    setMsg("ubMsg", "The machine stops taking customers until it is activated again.", "bad"); });
-  $("#ubSure")?.addEventListener("click", async () => {
-    $("#ubSure").disabled = true;
-    const { data, error } = await db.rpc("request_unbind", { p_unit: id, p_reason: $("#ubReason").value });
-    if (error || !data?.ok) { $("#ubSure").disabled = false; return setMsg("ubMsg", error?.message || UB[data.reason] || data.reason, "bad"); }
-    openUnit(id);
-  });
-  $("#ubCancel")?.addEventListener("click", async () => {
-    const { data, error } = await db.rpc("cancel_unbind", { p_id: $("#ubCancel").dataset.id });
-    if (error || !data?.ok) return setMsg("ubMsg", error?.message || UB[data.reason] || data.reason, "bad");
-    openUnit(id);
-  });
+  $("#toLicenses").addEventListener("click", () => { closeSheet(); showTab("licenses"); });
 }
 
 // ───── Clients ─────
@@ -814,34 +791,6 @@ function renderAccounts() {
     const { error } = await db.from("profiles").update({ client_id: sel.value || null }).eq("user_id", sel.dataset.acc);
     setMsg("acc-" + sel.dataset.acc, error ? error.message : "Saved", error ? "bad" : "ok");
     if (!error) { const p = state.profiles.find(x => x.user_id === sel.dataset.acc); if (p) p.client_id = sel.value || null; }
-  }));
-}
-
-// ───── Unbind requests ─────
-const UB_LABEL = { pending: ["Waiting for machine", "warn"], locked: ["Locked · free the key", "warn"], done: ["Done", "ok"],
-  rejected: ["Rejected", "bad"], cancelled: ["Cancelled", "off"] };
-async function renderUnbind() {
-  const { data, error } = await db.from("unbind_requests").select("*").order("created_at", { ascending: false }).limit(100);
-  if (error) { $("#unbindTable").innerHTML = `<tr><td>${esc(error.message)}</td></tr>`; return; }
-  const unit = id => state.units.find(x => x.id === id);
-  $("#unbindTable").innerHTML = `<tr><th>When</th><th>Unit</th>${state.dev ? "<th>License key</th>" : ""}<th>Reason</th><th>Status</th>${state.dev ? "<th></th>" : ""}</tr>` +
-    ((data || []).map(r => { const u = unit(r.unit_id), lb = UB_LABEL[r.status] || [r.status, "off"];
-      return `<tr><td>${esc(dt(r.created_at))}</td><td>${esc(u ? unitName(u) : "")}<div class="muted mono">${esc(u?.device_id || "")}</div></td>
-      ${state.dev ? `<td class="mono">${esc(u?.license_key || "")}</td>` : ""}
-      <td class="wrap-text">${esc(r.reason || "")}</td><td><span class="pill ${lb[1]}">${esc(lb[0])}</span></td>
-      ${state.dev ? `<td>${r.status === "locked" ? `<button class="btn primary" data-ub="${r.id}" data-st="done">Done (deviceId cleared)</button>`
-        : r.status === "pending" ? `<div class="muted" style="font-size:13px;margin-bottom:6px">Waiting for the machine to lock itself…</div>
-            <button class="btn danger" data-ub="${r.id}" data-st="rejected">Reject</button>
-            <button class="btn" data-ask="${r.id}">Unbind offline…</button>
-            <button class="btn danger" data-ub="${r.id}" data-st="done" data-sure="${r.id}" hidden>Yes, I cleared deviceId in Firebase</button>` : ""}</td>` : ""}</tr>`; }).join("")
-      || `<tr><td colspan="6" class="muted">No requests.</td></tr>`);
-  document.querySelectorAll("[data-ask]").forEach(b => b.addEventListener("click", () => {
-    b.hidden = true; document.querySelector(`[data-sure="${b.dataset.ask}"]`).hidden = false;
-  }));
-  document.querySelectorAll("[data-ub]").forEach(b => b.addEventListener("click", async () => {
-    b.disabled = true;
-    const { error } = await db.from("unbind_requests").update({ status: b.dataset.st, decided_at: new Date().toISOString(), decided_by: state.me.id }).eq("id", b.dataset.ub);
-    if (error) { b.disabled = false; b.textContent = error.message; } else renderUnbind();
   }));
 }
 
@@ -900,26 +849,66 @@ function licenseState(u) {
   if (days >= 7) return { key: "long", text: u.last_contact ? `Offline ${Math.floor(days)} days` : "Never online", cls: "bad" };
   return { key: "offline", text: "Offline", cls: "warn" };
 }
+const UB_WHY = { offline: "The machine is offline. Turn it on with internet first.", open: "A request is already open.",
+  not_yours: "This license is not in your account.", too_late: "The machine already locked itself.", not_developer: "Developer only." };
+function openRequest(u) { return (state.unbinds || []).find(r => r.unit_id === u.id && (r.status === "pending" || r.status === "locked")); }
+function licenseActions(u) {
+  const r = openRequest(u);
+  if (r?.status === "pending") return `<div class="muted" style="font-size:13px">Unbind requested ${esc(ago(r.created_at))}. Waiting for the machine to lock itself.</div>
+      <div class="act"><button class="btn" data-act="cancel" data-id="${r.id}">Cancel request</button>
+      ${state.dev ? `<button class="btn danger" data-act="reject" data-id="${r.id}">Reject</button>` : ""}</div>`;
+  if (r?.status === "locked") return state.dev
+    ? `<div class="muted" style="font-size:13px">Machine locked ${esc(ago(r.locked_at))}. Clear <b>deviceId</b> of this key in Firebase, then:</div>
+       <div class="act"><button class="btn primary" data-act="done" data-unit="${u.id}">Done (deviceId cleared)</button></div>`
+    : `<div class="muted" style="font-size:13px">Machine locked. Waiting for the developer to free the key.</div>`;
+  if (licenseState(u).key === "unbound") return `<span class="muted" style="font-size:13px">—</span>`;
+  const req = u.online
+    ? `<button class="btn" data-act="ask" data-unit="${u.id}">Request unbind</button>
+       <button class="btn danger" data-act="request" data-unit="${u.id}" hidden>Yes, lock this machine</button>`
+    : `<span class="muted" style="font-size:13px">${state.dev ? "Offline" : "Offline · contact the developer"}</span>`;
+  const dev = state.dev ? ` <button class="btn" data-act="askoff" data-unit="${u.id}">Unbind offline…</button>
+       <button class="btn danger" data-act="offline" data-unit="${u.id}" hidden>Yes, I cleared deviceId in Firebase</button>` : "";
+  return `<div class="act">${req}${dev}</div>`;
+}
 function renderLicenses() {
   const list = state.units.filter(u => u.product === "ezprint" && u.license_key);
   const f = $("#licFilter").value;
   const rows = list.map(u => ({ u, st: licenseState(u) }))
     .filter(x => f === "all" || x.st.key === f || (f === "offline" && x.st.key === "long"));
   const count = k => list.filter(u => licenseState(u).key === k).length;
-  $("#licSummary").textContent = `${list.length} license${list.length === 1 ? "" : "s"} · ${count("online")} online · ${count("long")} offline 7+ days`;
-  $("#licTable").innerHTML = `<tr><th>License key</th><th>Unit</th>${state.dev ? "<th>Client</th>" : ""}<th>Last online</th><th>Status</th></tr>` +
+  const open = list.filter(u => openRequest(u)).length;
+  $("#licSummary").textContent = `${list.length} license${list.length === 1 ? "" : "s"} · ${count("online")} online · ${count("long")} offline 7+ days${open ? ` · ${open} unbind request${open === 1 ? "" : "s"}` : ""}`;
+  $("#licTable").innerHTML = `<tr><th>License key</th><th>Unit</th>${state.dev ? "<th>Client</th>" : ""}<th>Last online</th><th>Status</th><th>Unbind</th></tr>` +
     (rows.map(({ u, st }) => `<tr>
       <td><span class="mono" data-key="${esc(u.license_key)}" data-shown="0">${esc(mask(u.license_key))}</span>
         <button class="btn" data-eye style="padding:3px 8px;margin-left:6px" aria-label="Show key"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
       <td>${esc(unitName(u))}<div class="muted mono" style="font-size:12px">${esc(u.device_id)}</div></td>
       ${state.dev ? `<td>${esc(clientName(u.client_id) || "—")}</td>` : ""}
       <td>${u.online ? "now" : esc(ago(u.last_contact))}<div class="muted" style="font-size:12px">${esc(dt(u.last_contact))}</div></td>
-      <td><span class="pill ${st.cls}">${esc(st.text)}</span></td></tr>`).join("")
-      || `<tr><td colspan="5" class="muted">${list.length ? "No licenses match." : "No licenses yet. A license shows here after its machine is activated and online once."}</td></tr>`);
+      <td><span class="pill ${st.cls}">${esc(st.text)}</span></td>
+      <td style="white-space:normal;width:230px;min-width:210px">${licenseActions(u)}<div class="msg" data-msg="${u.id}"></div></td></tr>`).join("")
+      || `<tr><td colspan="6" class="muted">${list.length ? "No licenses match." : "No licenses yet. A license shows here after its machine is activated and online once."}</td></tr>`);
   document.querySelectorAll("[data-eye]").forEach(b => b.addEventListener("click", () => {
     const k = b.previousElementSibling, shown = k.dataset.shown === "1";
     k.textContent = shown ? mask(k.dataset.key) : k.dataset.key; k.dataset.shown = shown ? "0" : "1";
     b.setAttribute("aria-label", shown ? "Show key" : "Hide key");
+  }));
+  const msgFor = b => b.closest("td").querySelector(".msg");
+  const say = (b, t, k) => { const m = msgFor(b); m.textContent = t; m.className = "msg " + k; };
+  document.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", async () => {
+    const act = b.dataset.act;
+    if (act === "ask" || act === "askoff") {
+      b.hidden = true; b.parentElement.querySelector(`[data-act="${act === "ask" ? "request" : "offline"}"]`).hidden = false;
+      return say(b, act === "ask" ? "Stops taking customers until activated again." : "Only after you emptied deviceId in Firebase.", "bad");
+    }
+    b.disabled = true;
+    let res;
+    if (act === "request") res = await db.rpc("request_unbind", { p_unit: b.dataset.unit, p_reason: "" });
+    if (act === "cancel") res = await db.rpc("cancel_unbind", { p_id: b.dataset.id });
+    if (act === "offline" || act === "done") res = await db.rpc("dev_mark_unbound", { p_unit: b.dataset.unit, p_reason: act === "offline" ? "Unbound by developer" : "" });
+    if (act === "reject") res = await db.from("unbind_requests").update({ status: "rejected", decided_at: new Date().toISOString(), decided_by: state.me.id }).eq("id", b.dataset.id).then(r => ({ data: r.error ? null : { ok: true }, error: r.error }));
+    if (res.error || !res.data?.ok) { b.disabled = false; return say(b, res.error?.message || UB_WHY[res.data?.reason] || res.data?.reason || "Failed", "bad"); }
+    await loadAll();
   }));
 }
 $("#licFilter").addEventListener("change", renderLicenses);
