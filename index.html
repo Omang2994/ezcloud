@@ -570,7 +570,13 @@ async function loadAll() {
     db.from("unbind_requests").select("id,unit_id,status,created_at,locked_at,reason").order("created_at", { ascending: false }).limit(500)
   ]);
   if (u.error) { $("#units").innerHTML = `<div class="empty">Couldn't load units: ${esc(u.error.message)}</div>`; return; }
-  state.units = u.data || []; state.clients = c.data || []; state.profiles = p.data || []; state.unbinds = ub.data || [];
+  state.units = (u.data || []).map(x => {
+    // Ping got no answer and nothing came since: offline now (don't wait for the check-in window).
+    const na = noAnswer[x.id];
+    if (na && !(x.last_contact && new Date(x.last_contact) > na)) x.online = false; else delete noAnswer[x.id];
+    return x;
+  });
+  state.clients = c.data || []; state.profiles = p.data || []; state.unbinds = ub.data || [];
   $("#updated").textContent = "Updated " + new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
   renderUnits();
   if (!$("#tab-home").hidden) renderHome();
@@ -911,6 +917,7 @@ function renderAccounts() {
 // ───── Ping ─────
 // The machine checks in every few minutes; a ping makes it send a full report at its next check-in.
 const pings = {};   // unit id -> { at, deadline }
+const noAnswer = {};   // unit id -> time of the ping it didn't answer
 function fmtLeft(sec) { const m = Math.floor(sec / 60), s2 = String(sec % 60).padStart(2, "0"); return `${m}:${s2}`; }
 async function ping(id) {
   const { data, error } = await db.rpc("request_ping", { p_unit: id });
@@ -918,7 +925,7 @@ async function ping(id) {
   if (!data.ok && data.reason !== "wait") return showPing(id, data.reason === "not_yours" ? "This unit is not in your account." : data.reason, "bad");
   const u = state.units.find(x => x.id === id);
   const secs = data.pollSeconds || u?.poll_seconds || 300;
-  pings[id] = { at: new Date(data.at), deadline: new Date(new Date(data.at).getTime() + (secs + 90) * 1000), next: new Date(new Date(data.at).getTime() + secs * 1000) };
+  pings[id] = { at: new Date(data.at), deadline: new Date(new Date(data.at).getTime() + (secs + 45) * 1000), next: new Date(new Date(data.at).getTime() + secs * 1000) };
   watchPing(id);
 }
 function resumePing(id) { if (pings[id]) watchPing(id); }
@@ -943,9 +950,13 @@ async function watchPing(id) {
           if (!$("#sheet").hidden && $("#sheet").dataset.unit === id) await openUnit(id);
           showPing(id, `Online · answered in ${s < 90 ? s + " seconds" : Math.round(s / 60) + " minutes"}. Status below is new.`, "ok");
         } else if (Date.now() > p.deadline) {
-          p.done = true; showPing(id, "No answer. The machine is offline (or off, or without internet).", "bad");
+          p.done = true; noAnswer[id] = p.at;
+          await loadAll();
+          if (!$("#sheet").hidden && $("#sheet").dataset.unit === id) await openUnit(id);
+          showPing(id, "No answer. The machine is offline (or off, or without internet).", "bad");
         } else {
-          showPing(id, `Waiting for the machine… it checks in every ${Math.round((state.units.find(x => x.id === id)?.poll_seconds || 300) / 60)} minutes.`, "");
+          const ps = state.units.find(x => x.id === id)?.poll_seconds || 300;
+          showPing(id, `Waiting for the machine… it checks in every ${ps < 120 ? "minute" : Math.round(ps / 60) + " minutes"}.`, "");
         }
       }
       if (left === 0 && p.done) { if (btn) { btn.disabled = false; btn.textContent = "Ping"; } delete pings[id]; break; }
