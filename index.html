@@ -112,6 +112,31 @@ label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(-
 .dl-row .btn { text-align: center; text-decoration: none; font-size: 14px; padding: 7px 10px; }
 .dl-row a.btn { color: var(--on-accent); }
 .act { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.acc-list { display: grid; gap: 14px; }
+.acc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: grid; }
+.acc > section { padding: 14px 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.acc > section:first-child { border-top: 0; }
+.acc-head { display: flex; gap: 12px; align-items: start; justify-content: space-between; flex-wrap: wrap; }
+.acc-head h3 { font-size: 16px; overflow-wrap: anywhere; }
+.acc-shop { color: var(--ink-2); font-size: 15px; }
+.acc-edit { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.acc-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.lic-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding-block: 6px; border-top: 1px solid var(--line); }
+.lic-row:first-of-type { border-top: 0; }
+.lic-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.acc-add input { flex: 1 1 220px; max-width: 320px; font-family: var(--f-mono); }
+.acc-foot { display: flex; gap: 8px; flex-wrap: wrap; }
+.acc .msg:empty { display: none; }
+.acc-add input::placeholder { font-family: var(--f-body); }
+.btn.small { padding: 4px 10px; font-size: 14px; }
+.btn.link-btn { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn.link-btn:hover { color: var(--bad); background: var(--bad-soft); }
+@media (max-width: 860px) {
+  .acc-edit { grid-template-columns: 1fr; }
+  .lic-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
+  .lic-row .pill { display: none; }
+}
 #licTable th, #licTable td { padding: 9px 8px; }
 #licTable .msg { overflow-wrap: anywhere; }
 .act .btn { padding: 5px 10px; font-size: 14px; }
@@ -296,7 +321,6 @@ td.wrap-text { white-space: normal; min-width: 220px; }
       <button class="tab" role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
       <button class="tab" role="tab" data-tab="units" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="7" rx="1"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M7 18v3h10v-3"/></svg><span>EzPrint Pro</span></button>
       <button class="tab" role="tab" data-tab="licenses" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg><span>Licenses</span></button>
-      <button class="tab dev" role="tab" data-tab="clients" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21v-1a6 6 0 0 1 12 0v1"/><circle cx="9" cy="8" r="4"/><path d="M17 11a3 3 0 1 0 0-6M21 21v-1a5 5 0 0 0-3-4.6"/></svg><span>Clients</span></button>
       <button class="tab dev" role="tab" data-tab="accounts" aria-selected="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3"/></svg><span>Accounts</span></button>
       <button class="tab" role="tab" data-tab="downloads" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg><span>Downloads</span></button>
     </nav>
@@ -339,24 +363,11 @@ td.wrap-text { white-space: normal; min-width: 220px; }
     </section>
 
     <!-- Clients (developer) -->
-    <section id="tab-clients" hidden style="display:grid;gap:16px">
-      <form class="panel" id="clientForm">
-        <h3>Add client</h3>
-        <div class="form-row">
-          <label>Name <input id="cName" required placeholder="Juan's Printshop"></label>
-          <label>Phone <input id="cPhone" placeholder="0917 000 0000"></label>
-        </div>
-        <div><button class="btn primary" type="submit">Add client</button> <span class="msg" id="clientMsg"></span></div>
-      </form>
-      <div class="panel"><h3>Clients</h3><div class="table-wrap"><table id="clientsTable"></table></div></div>
-    </section>
 
     <!-- Accounts (developer) -->
     <section id="tab-accounts" hidden style="display:grid;gap:16px">
-      <div class="panel">
-        <p class="muted" style="margin:0">A new account sees nothing until it has a shop. Add a license here, or the owner adds it with the EzSoft code from the machine. Deleting a login keeps the shop, units and sales.</p>
-        <div class="table-wrap"><table id="accountsTable"></table></div>
-      </div>
+      <p class="muted" style="margin:0">A new account sees nothing until it has a license. Add one here, or the owner adds it with the EzSoft code from the machine.</p>
+      <div class="acc-list" id="accountsList"></div>
     </section>
 
     <!-- Unbind requests -->
@@ -482,10 +493,10 @@ async function start(session) {
 }
 
 // ───── Tabs ─────
-const TABS = ["home", "units", "licenses", "clients", "accounts", "downloads"];
+const TABS = ["home", "units", "licenses", "accounts", "downloads"];
 const HEADS = {
   home: ["Home", "Your EzSoft products."], units: ["EzPrint Pro", "Every EzPrint Pro machine, live."],
-  clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Who can log in, and which shop they see."],
+  clients: ["Clients", "The shops that own your units."], accounts: ["Accounts", "Each login, its shop and its licenses."],
   unbind: ["Unbind requests", "Moving a license to a new coin slot."], licenses: ["Licenses", "Every EzPrint Pro license, when it was last online, and unbind requests."], downloads: ["Downloads", "Apps, installers and firmware."]
 };
 function showTab(name) {
@@ -494,7 +505,6 @@ function showTab(name) {
   $("#pageTitle").textContent = HEADS[name][0]; $("#pageSub").textContent = HEADS[name][1];
   window.scrollTo(0, 0);
   if (name === "home") renderHome();
-  if (name === "clients") renderClients();
   if (name === "accounts") renderAccounts();
   if (name === "licenses") renderLicenses();
   if (name === "downloads") renderDownloads($("#dlApp"));
@@ -746,12 +756,16 @@ async function openUnit(id) {
       <div class="form-row">
         <label>Name <input id="uName" value="${esc(u.name || "")}" placeholder="${esc(s.name || "")}"></label>
         <label>Location <input id="uLoc" value="${esc(u.location || "")}" placeholder="Brgy., city"></label>
-        <label>Client <select id="uClient"><option value="">No client</option>
+        <label>Shop <select id="uClient"><option value="">None</option>
           ${state.clients.map(c => `<option value="${c.id}" ${c.id === u.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
         <label>Report every (minutes, empty = default) <input id="uMin" type="number" min="5" max="1440" value="${u.report_minutes ?? ""}"></label>
       </div>
       <div class="muted">License key: <span class="mono">${esc(u.license_key || "—")}</span></div>
-      <div><button class="btn primary" type="submit">Save</button> <span class="msg" id="unitMsg"></span></div>
+      <div class="act"><button class="btn primary" type="submit">Save</button>
+        <span style="flex:1"></span>
+        <button class="btn link-btn" type="button" id="delUnit">Delete unit</button></div>
+      <div class="msg" id="unitMsg"></div>
+      <div class="muted" style="font-size:13px">Delete removes this unit and its sales and errors from EzSoft. If the machine still runs with its license, it comes back as a new unit at its next report.</div>
     </form>` : ""}
 
     <div class="panel"><h3>License</h3>
@@ -775,6 +789,12 @@ async function openUnit(id) {
   resumePing(id);
 
   if (state.dev) {
+    $("#delUnit").addEventListener("click", async e => {
+      if (!confirmStep(e.target, "Yes, delete unit and its sales")) return;
+      const { data, error } = await db.rpc("dev_delete_unit", { p_unit: id });
+      if (error || !data?.ok) return setMsg("unitMsg", error?.message || "Failed", "bad");
+      closeSheet(); await loadAll();
+    });
     $("#unitForm").addEventListener("submit", async e => {
       e.preventDefault();
       const min = $("#uMin").value.trim();
@@ -789,86 +809,73 @@ async function openUnit(id) {
   $("#toLicenses").addEventListener("click", () => { closeSheet(); showTab("licenses"); });
 }
 
-// ───── Clients ─────
-// Two-step buttons: first tap shows "Yes, …", second tap does it.
+// ───── Accounts ─────
+// Two-step buttons: first tap shows "Yes, …", second tap does it (back to normal after 6 s).
 function confirmStep(btn, label) {
   if (btn.dataset.armed === "1") return true;
   btn.dataset.armed = "1"; btn.dataset.label = btn.textContent; btn.textContent = label; btn.classList.add("danger");
   setTimeout(() => { if (btn.isConnected && btn.dataset.armed === "1") { btn.dataset.armed = ""; btn.textContent = btn.dataset.label; btn.classList.remove("danger"); } }, 6000);
   return false;
 }
-const accountsOf = id => state.profiles.filter(p => p.client_id === id);
-function renderClients() {
-  const units = id => state.units.filter(u => u.client_id === id);
-  $("#clientsTable").innerHTML = `<tr><th>Shop</th><th>Phone</th><th>Accounts</th><th class="r">Units</th><th></th></tr>` +
-    (state.clients.map(c => `<tr data-client="${c.id}">
-      <td><span class="v-name">${esc(c.name)}</span><input class="e-name" value="${esc(c.name)}" hidden></td>
-      <td><span class="v-phone">${esc(c.phone || "—")}</span><input class="e-phone" value="${esc(c.phone || "")}" hidden></td>
-      <td class="wrap-text" style="min-width:160px">${accountsOf(c.id).map(p => esc(p.display_name || "")).join("<br>") || `<span class="muted">none</span>`}</td>
-      <td class="r">${units(c.id).length}</td>
-      <td><div class="act"><button class="btn" data-cedit>Edit</button><button class="btn primary" data-csave hidden>Save</button>
-        <button class="btn" data-cdel>Delete</button></div><div class="msg"></div></td></tr>`).join("")
-      || `<tr><td colspan="5" class="muted">No clients yet.</td></tr>`);
-  document.querySelectorAll("[data-client]").forEach(row => {
-    const id = row.dataset.client, msg = row.querySelector(".msg");
-    row.querySelector("[data-cedit]").addEventListener("click", e => {
-      row.querySelectorAll(".v-name,.v-phone").forEach(x => x.hidden = true);
-      row.querySelectorAll(".e-name,.e-phone").forEach(x => x.hidden = false);
-      e.target.hidden = true; row.querySelector("[data-csave]").hidden = false;
-    });
-    row.querySelector("[data-csave]").addEventListener("click", async () => {
-      const name = row.querySelector(".e-name").value.trim();
-      if (!name) { msg.textContent = "Type a name."; msg.className = "msg bad"; return; }
-      const { error } = await db.from("clients").update({ name, phone: row.querySelector(".e-phone").value.trim() || null }).eq("id", id);
-      if (error) { msg.textContent = error.message; msg.className = "msg bad"; return; }
-      await loadAll(); renderClients();
-    });
-    row.querySelector("[data-cdel]").addEventListener("click", async e => {
-      if (!confirmStep(e.target, "Yes, delete shop")) return;
-      const { error } = await db.from("clients").delete().eq("id", id);
-      if (error) { msg.textContent = error.message; msg.className = "msg bad"; return; }
-      await loadAll(); renderClients();
-    });
-  });
-}
-$("#clientForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const { error } = await db.from("clients").insert({ name: $("#cName").value.trim(), phone: $("#cPhone").value.trim() || null });
-  setMsg("clientMsg", error ? error.message : "Added.", error ? "bad" : "ok");
-  if (!error) { $("#cName").value = ""; $("#cPhone").value = ""; await loadAll(); renderClients(); }
-});
-
-// ───── Accounts ─────
 const ACC_WHY = { not_found: "No machine with that key yet (it must be activated and online once).", no_account: "Account not found.",
-  self: "You can't delete your own account.", developer: "Developer accounts can't be deleted here.", not_developer: "Developer only." };
+  self: "You can't delete your own account.", developer: "Developer accounts can't be deleted here.", not_developer: "Developer only.",
+  no_name: "Type a shop name." };
 function renderAccounts() {
-  $("#accountsTable").innerHTML = `<tr><th>Account</th><th>Shop</th><th>Licenses</th><th></th></tr>` +
-    state.profiles.map(p => {
-      const dev = p.role === "developer";
-      const units = p.client_id ? state.units.filter(u => u.client_id === p.client_id) : [];
-      return `<tr data-acc="${p.user_id}">
-      <td>${esc(p.display_name || p.user_id)}${dev ? ` <span class="pill ok">developer</span>` : ""}</td>
-      <td style="min-width:180px">${dev ? `<span class="muted">sees everything</span>` : `<select data-shop><option value="">None (sees nothing)</option>
-        ${state.clients.map(c => `<option value="${c.id}" ${c.id === p.client_id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select>`}</td>
-      <td style="white-space:normal;min-width:230px">${dev ? "" : (units.map(u => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
-          <span class="mono" style="font-size:13px;white-space:nowrap">••••${esc((u.license_key || "").slice(-4))}</span><span class="muted" style="font-size:13px;white-space:nowrap">${esc(unitName(u))}</span>
-          <button class="btn" data-unlink="${u.id}" style="padding:2px 8px;font-size:13px">Remove</button></div>`).join("") || `<span class="muted">none</span>`)}</td>
-      <td style="min-width:240px">${dev ? "" : `<div class="act">
-          <input data-key placeholder="License key" style="max-width:150px;font-family:var(--f-mono);padding:6px 8px;font-size:13px" autocomplete="off">
-          <button class="btn primary" data-assign>Add license</button></div>
-        <div class="act"><button class="btn" data-noaccess ${p.client_id ? "" : "disabled"}>Remove access</button>
-          <button class="btn" data-delacc>Delete account</button></div>`}<div class="msg"></div></td></tr>`;
-    }).join("");
-  document.querySelectorAll("[data-acc]").forEach(row => {
-    const uid = row.dataset.acc, msg = row.querySelector(".msg");
+  const list = [...state.profiles].sort((a, b) => (a.role === "developer" ? -1 : b.role === "developer" ? 1 : 0));
+  $("#accountsList").innerHTML = list.map(p => {
+    const dev = p.role === "developer";
+    const shop = state.clients.find(c => c.id === p.client_id);
+    const units = p.client_id ? state.units.filter(u => u.client_id === p.client_id) : [];
+    if (dev) return `<div class="acc"><section><div class="acc-head"><h3>${esc(p.display_name || "")}</h3><span class="pill ok">developer · sees everything</span></div></section></div>`;
+    return `<div class="acc" data-acc="${p.user_id}">
+      <section>
+        <div class="acc-head">
+          <div><h3>${esc(p.display_name || p.user_id)}</h3>
+            <div class="acc-shop">${shop ? esc(shop.name) + (shop.phone ? " · " + esc(shop.phone) : "") : `<span class="muted">No shop yet</span>`}</div></div>
+          <button class="btn small" data-edit>Edit shop</button>
+        </div>
+        <div class="acc-edit" hidden>
+          <input data-sname placeholder="Shop name" value="${esc(shop?.name || "")}">
+          <input data-sphone placeholder="Phone" value="${esc(shop?.phone || "")}">
+          <button class="btn primary small" data-save>Save</button>
+          <button class="btn small" data-cancel>Cancel</button>
+        </div>
+      </section>
+      <section>
+        <div class="acc-label">Licenses</div>
+        <div>${units.map(u => { const st = licenseState(u); return `<div class="lic-row">
+            <span class="mono" style="font-size:13px">••••${esc((u.license_key || "").slice(-4))}</span>
+            <span class="name">${esc(unitName(u))}</span>
+            <span class="pill ${st.cls}">${esc(st.text)}</span>
+            <button class="btn small" data-unlink="${u.id}">Remove</button></div>`; }).join("") || `<div class="muted">No licenses yet.</div>`}</div>
+        <div class="acc-add">
+          <input data-key placeholder="License key, e.g. EZP-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+          <button class="btn primary" data-assign>Add license</button>
+        </div>
+      </section>
+      <section>
+        <div class="acc-foot">
+          <button class="btn small link-btn" data-noaccess ${p.client_id ? "" : "disabled"}>Remove access</button>
+          <button class="btn small link-btn" data-delacc>Delete login</button>
+        </div>
+        <div class="msg"></div>
+      </section>
+    </div>`;
+  }).join("") || `<div class="empty">No accounts yet.</div>`;
+
+  document.querySelectorAll("[data-acc]").forEach(card => {
+    const uid = card.dataset.acc, msg = card.querySelector(".msg");
     const say = (t, k) => { msg.textContent = t; msg.className = "msg " + k; };
     const refresh = async () => { await loadAll(); renderAccounts(); };
-    row.querySelector("[data-shop]")?.addEventListener("change", async e => {
-      const { error } = await db.from("profiles").update({ client_id: e.target.value || null }).eq("user_id", uid);
-      error ? say(error.message, "bad") : refresh();
+    const edit = card.querySelector(".acc-edit");
+    card.querySelector("[data-edit]").addEventListener("click", () => { edit.hidden = false; card.querySelector("[data-sname]").focus(); });
+    card.querySelector("[data-cancel]").addEventListener("click", () => { edit.hidden = true; });
+    card.querySelector("[data-save]").addEventListener("click", async () => {
+      const { data, error } = await db.rpc("dev_save_shop", { p_user: uid, p_name: card.querySelector("[data-sname]").value, p_phone: card.querySelector("[data-sphone]").value });
+      error || !data?.ok ? say(error?.message || ACC_WHY[data.reason] || data.reason, "bad") : refresh();
     });
-    row.querySelector("[data-assign]")?.addEventListener("click", async e => {
-      const key = row.querySelector("[data-key]").value.trim();
+    card.querySelector("[data-assign]").addEventListener("click", async e => {
+      const key = card.querySelector("[data-key]").value.trim();
       if (key.length < 6) return say("Type the whole license key.", "bad");
       const move = e.target.dataset.move === "1";
       e.target.disabled = true;
@@ -876,23 +883,23 @@ function renderAccounts() {
       e.target.disabled = false;
       if (error) return say(error.message, "bad");
       if (!data.ok && data.reason === "linked") {
-        e.target.dataset.move = "1"; e.target.textContent = "Yes, move it"; e.target.classList.add("danger");
-        return say(`${data.unit} is in ${data.client || "another shop"}. Tap "Yes, move it" to move it here.`, "bad");
+        e.target.dataset.move = "1"; e.target.textContent = "Yes, move it here"; e.target.classList.add("danger");
+        return say(`${data.unit} belongs to ${data.client || "another account"}. Tap again to move it here.`, "bad");
       }
       if (!data.ok) return say(ACC_WHY[data.reason] || data.reason, "bad");
       refresh();
     });
-    row.querySelectorAll("[data-unlink]").forEach(b => b.addEventListener("click", async () => {
+    card.querySelectorAll("[data-unlink]").forEach(b => b.addEventListener("click", async () => {
       if (!confirmStep(b, "Yes, remove")) return;
       const { data, error } = await db.rpc("dev_unlink_unit", { p_unit: b.dataset.unlink });
       error || !data?.ok ? say(error?.message || "Failed", "bad") : refresh();
     }));
-    row.querySelector("[data-noaccess]")?.addEventListener("click", async e => {
+    card.querySelector("[data-noaccess]").addEventListener("click", async e => {
       if (!confirmStep(e.target, "Yes, remove access")) return;
       const { error } = await db.from("profiles").update({ client_id: null }).eq("user_id", uid);
       error ? say(error.message, "bad") : refresh();
     });
-    row.querySelector("[data-delacc]")?.addEventListener("click", async e => {
+    card.querySelector("[data-delacc]").addEventListener("click", async e => {
       if (!confirmStep(e.target, "Yes, delete login")) return;
       const { data, error } = await db.rpc("dev_delete_account", { p_user: uid });
       error || !data?.ok ? say(error?.message || ACC_WHY[data.reason] || data.reason, "bad") : refresh();
