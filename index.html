@@ -326,9 +326,10 @@ td.wrap-text { white-space: normal; min-width: 220px; }
       </div>
       <form class="panel" id="addUnitForm" hidden>
         <h3>Add a unit to your account</h3>
-        <p class="muted" style="margin:0">Type the license key of the machine (Admin › License on the machine shows the last 4 characters). The machine must be on and online once first.</p>
+        <p class="muted" style="margin:0">On the machine, open <b>Admin › License</b>. Type the <b>license key</b> and the <b>EzSoft code</b> shown there (the code changes every 10 minutes). The machine must be on and online.</p>
         <div class="toolbar">
-          <input id="addKey" placeholder="EZP-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="max-width:340px;font-family:var(--f-mono)">
+          <input id="addKey" placeholder="License key  EZP-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="max-width:340px;font-family:var(--f-mono)">
+          <input id="addCode" placeholder="EzSoft code  XXXX-XXXX" autocomplete="off" spellcheck="false" maxlength="12" style="max-width:220px;font-family:var(--f-mono);text-transform:uppercase">
           <button class="btn primary" type="submit">Add</button>
           <button class="btn" type="button" id="addCancel">Cancel</button>
         </div>
@@ -943,14 +944,18 @@ $("#addUnitForm").addEventListener("submit", async e => {
   const key = $("#addKey").value.trim();
   if (key.length < 6) return setMsg("addMsg", "Type the whole license key.", "bad");
   setMsg("addMsg", "Checking…");
-  const { data, error } = await db.rpc("claim_unit", { p_key: key });
+  const code = $("#addCode").value.trim();
+  if (code.replace(/[^A-Za-z0-9]/g, "").length !== 8) return setMsg("addMsg", "Type the 8-character EzSoft code from the machine (Admin › License).", "bad");
+  const { data, error } = await db.rpc("claim_unit", { p_key: key, p_code: code });
   if (error) return setMsg("addMsg", error.message, "bad");
   const why = { not_found: "No machine with that key yet. Turn the machine on with internet, wait 2 minutes, then try again.",
     taken: "That machine is linked to another account. Contact the developer.", too_many: "Too many tries. Wait an hour and try again.",
+    bad_code: "Wrong or old EzSoft code. Look at Admin › License on the machine again (it changes every 10 minutes).",
+    no_code: "This machine has no EzSoft code yet. Update EzPrint Pro on it, keep it online 2 minutes, then try again.",
     login: "Log in again." };
   if (!data.ok) return setMsg("addMsg", why[data.reason] || data.reason, "bad");
   setMsg("addMsg", data.already ? `${data.unit} is already in your account.` : `Added ${data.unit}.`, "ok");
-  $("#addKey").value = "";
+  $("#addKey").value = ""; $("#addCode").value = "";
   await loadAll();
 });
 
